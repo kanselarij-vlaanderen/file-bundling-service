@@ -34,14 +34,15 @@ app.post('/bundleAllFiles', async (req, res) => {
 });
 
 const createUsefullAgendaItem = (item) => {
-  const name = `${item.numberVR || '-'}.${item.extension}`;
+  const name = `${item.numberVR || item.documentVersionName || item.documentVersionId}.${
+    item.extension
+  }`;
   let download;
   if (item && item.download) {
     download = item.download.split('share://')[1];
   }
 
   return {
-    title: item.numberVR || name,
     name,
     download,
   };
