@@ -51,9 +51,10 @@ app.post('/bundleAllFiles', async (req, res) => {
 });
 
 const createUsefullAgendaItem = (item) => {
+    const latinVersionNumber = item.maxVersionNumber && latinAdverbialNumberals[item.maxVersionNumber].toUpperCase();
     const name = `${item.maxVersionNumber && item.documentTitle
-        ? `${item.documentTitle} ${latinAdverbialNumberals[item.maxVersionNumber].toUpperCase()}`
-        : item.numberVR || item.documentVersionName || item.documentVersionId}.${
+        ? `${item.documentTitle} ${latinVersionNumber}`.trim()
+        : item.documentTitle ||item.numberVR || item.documentVersionName || item.documentVersionId}.${
         item.extension
     }`;
     let download;
