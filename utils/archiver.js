@@ -1,7 +1,7 @@
 const fs = require('fs');
 const archiver = require('archiver');
 
-const archiveFiles = async (meetingDate, agenda, agendaitems) => {
+const archiveFiles = async (meetingDate, agendaitems) => {
   const path = `${__dirname}/test.zip`;
   const output = fs.createWriteStream(path);
 
@@ -25,7 +25,7 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
   archive.finalize();
 
   return new Promise((resolve, reject) => {
-    archive.on('warning', function(err) {
+    archive.on('warning', function (err) {
       if (err.code === 'ENOENT') {
         console.warn('warning', err);
       } else {
@@ -33,17 +33,17 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
       }
     });
 
-    archive.on('error', function(err) {
+    archive.on('error', function (err) {
       reject(err);
     });
 
-    output.on('close', function() {
+    output.on('close', function () {
       console.log(archive.pointer() + ' total bytes');
       console.log('archiver has been finalized and the output file descriptor has closed.');
       resolve(path);
     });
 
-    output.on('end', function() {
+    output.on('end', function () {
       console.log('Data has been drained');
       resolve(path);
     });
@@ -58,4 +58,4 @@ const appendFile = (archive, item, prefixPath) => {
   });
 };
 
-module.exports = { archiveFiles };
+module.exports = {archiveFiles};
