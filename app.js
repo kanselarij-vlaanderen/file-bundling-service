@@ -23,8 +23,8 @@ const latinAdverbialNumberals = {
 };
 
 app.use(cors());
-app.use(bodyParser.json({ type: 'application/*+json', limit: '500mb' }));
-app.use(bodyParser.urlencoded({limit: '500mb', extended: true}));
+app.use(bodyParser.json({ type: 'application/*+json', limit: '2000mb' }));
+app.use(bodyParser.urlencoded({limit: '2000mb', extended: true}));
 
 app.post('/bundleAllFiles', async (req, res) => {
     const agenda = JSON.parse(req.body.agenda);
