@@ -29,7 +29,7 @@ app.use(bodyParser.json({
   type: function (req) {
     return /^application\/json/.test(req.get('content-type'));
   },
-  limit: '500mb'
+  limit: '5gb'
 }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -65,7 +65,7 @@ app.get('/bundleAllFiles', async (req, res) => {
       }})
   } catch (error) {
     console.log(`[${new Date().toString()}] - Error while bundling the agenda with id: ${agenda_id}`)
-    res.statusCode(500).send('Something went wrong while bundling all the files.')
+    res.status(500).send('Something went wrong while bundling all the files.')
   }
 
 });
