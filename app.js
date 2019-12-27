@@ -1,7 +1,6 @@
 import cors from 'cors';
-import {app, errorHandler} from 'mu';
-
-const {getAllAgendaItemsFromAgendaWithDocuments} = require('./repository');
+import { app, errorHandler } from 'mu';
+import { getAllAgendaItemsFromAgendaWithDocuments } from "./repository";
 import fs from "fs";
 import archiver from "./utils/archiver";
 import bodyParser from "body-parser";
@@ -24,6 +23,11 @@ const latinAdverbialNumberals = {
   15: 'quindecies',
 };
 
+fs.mkdir(`${__dirname}/tmp`, () => {
+});
+fs.mkdir(`${__dirname}/complete`, () => {
+});
+
 app.use(cors());
 app.use(bodyParser.json({
   type: function (req) {
@@ -33,44 +37,70 @@ app.use(bodyParser.json({
 }));
 app.use(bodyParser.urlencoded({ extended: false }));
 
-app.get('/bundleAllFiles', async (req, res) => {
+app.post('/bundleAllFiles', async (req, res) => {
   const agenda_id = req.query.agenda_id;
-  const meetingDate = req.query.meeting_date;
-  console.log(meetingDate)
+  let filename;
   try {
     const allAgendaItemsWithDocuments = await getAllAgendaItemsFromAgendaWithDocuments(agenda_id);
-    const files = allAgendaItemsWithDocuments.filter((item) => item.download)
+    const files = allAgendaItemsWithDocuments.filter((item) => item.download);
 
     const agendaitems = files.reduce((items, fileObject) => {
-      const foundItem = items.find((item) => item.agendaitem_id == fileObject.agendaitem_id);
+      const foundItem = items.find((item) => item.agendaitem_id === fileObject.agendaitem_id);
       if (!foundItem) {
         const item = {
           agendaitem_id: fileObject.agendaitem_id,
           agendaitemPrio: fileObject.agendaitemPrio,
           agendaitemName: `agendapunt_${fileObject.agendaitemPrio}`,
-          filesToDownload: [createUsefullAgendaItem(fileObject)],
+          filesToDownload: [createUsefulAgendaItem(fileObject)],
         };
         items.push(item);
       } else {
-        foundItem.filesToDownload.push(createUsefullAgendaItem(fileObject));
+        foundItem.filesToDownload.push(createUsefulAgendaItem(fileObject));
       }
       return items;
     }, []);
 
-    const path = await archiver.archiveFiles(meetingDate, agendaitems);
+    filename = `${agenda_id}.${new Date().valueOf()}.zip`;
 
-    res.sendFile(path, {headers: {
-        'Content-Type': 'application/zip',
-        'Content-disposition': `attachment; filename=agenda_van_${meetingDate}.zip`
-      }})
+    res.status(200).send(filename);
+
+    const tempPath = constructTempPath(filename);
+    await archiver.archiveFiles(tempPath, agendaitems);
+
+    fs.renameSync(tempPath, constructNewPath(filename));
   } catch (error) {
-    console.log(`[${new Date().toString()}] - Error while bundling the agenda with id: ${agenda_id}`)
-    res.status(500).send('Something went wrong while bundling all the files.')
+    console.log(`[${new Date().toString()}] - Error while bundling the agenda with id: ${agenda_id}`);
+    if (filename) {
+      cleanup(filename)
+    }
   }
-
 });
 
-const createUsefullAgendaItem = (item) => {
+app.get('/downloadBundle', async (req, res) => {
+  const filename = req.query.path;
+  res.sendFile(
+      constructNewPath(filename),
+      {
+        headers: {
+          'Content-Type': 'application/zip',
+          'Content-disposition': 'attachment'
+        }
+      },
+      (err) => {
+        if (err) {
+          if (err.status === 404) {
+            res.status(202).send()
+          } else {
+            console.log(`[${new Date().toString()}] - Error while getting the file with path: ${filename} \n ${err}`);
+            res.status(500).send('Something went wrong while downloading files.')
+          }
+        } else {
+          cleanup(filename);
+        }
+      })
+});
+
+const createUsefulAgendaItem = (item) => {
   const latinVersionNumber = item.maxVersionNumber && latinAdverbialNumberals[item.maxVersionNumber].toUpperCase();
   const name = `${item.maxVersionNumber && item.documentTitle
     ? `${item.documentTitle} ${latinVersionNumber}`.trim()
@@ -87,5 +117,20 @@ const createUsefullAgendaItem = (item) => {
     download,
   };
 };
+
+function cleanup(filename) {
+  fs.unlink(constructNewPath(filename), () => {
+  });
+  fs.unlink(constructTempPath(filename), () => {
+  });
+}
+
+function constructNewPath(filename) {
+  return `${__dirname}/complete/${filename}`;
+}
+
+function constructTempPath(filename) {
+  return `${__dirname}/tmp/${filename}`;
+}
 
 app.use(errorHandler);

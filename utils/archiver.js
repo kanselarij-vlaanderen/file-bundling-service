@@ -1,8 +1,7 @@
 const fs = require('fs');
 const archiver = require('archiver');
 
-const archiveFiles = async (meetingDate, agendaitems) => {
-  const path = `${__dirname}/test.zip`;
+const archiveFiles = async (path, agendaitems) => {
   const output = fs.createWriteStream(path);
 
   const archive = archiver('zip', {
