@@ -6,9 +6,7 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
   const output = fs.createWriteStream(path);
 
   const archive = archiver('zip', {
-    zlib: {
-      level: 9,
-    },
+    zlib: { level: 9 }
   });
   archive.pipe(output);
 
@@ -54,7 +52,7 @@ const appendFile = (archive, item, prefixPath) => {
   const file1 = `/share/${item.download}`;
 
   return archive.append(fs.createReadStream(file1), {
-    name: `${item.name.replace('/', '_')}`,
+    name: `${item.name.replace('/', '_')}`
   });
 };
 
