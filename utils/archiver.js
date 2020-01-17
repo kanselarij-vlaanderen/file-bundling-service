@@ -1,3 +1,4 @@
+import sanitize from 'sanitize-filename';
 const fs = require('fs');
 const archiver = require('archiver');
 
@@ -52,7 +53,7 @@ const appendFile = (archive, item, prefixPath) => {
   const file1 = `/share/${item.download}`;
 
   return archive.append(fs.createReadStream(file1), {
-    name: `${item.name.replace('/', '_')}`
+    name: sanitize(item.name, { replacement: '_' })
   });
 };
 
