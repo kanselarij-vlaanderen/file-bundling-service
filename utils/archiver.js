@@ -15,7 +15,7 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
     agendaitems.map((item) => {
       return Promise.all(
         item.filesToDownload.map((file) => {
-          return appendFile(archive, file, item.agendaitemName);
+          return appendFile(archive, file);
         })
       );
     })
@@ -49,10 +49,10 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
   });
 };
 
-const appendFile = (archive, item, prefixPath) => {
-  const file1 = `/share/${item.download}`;
+const appendFile = (archive, item) => {
+  const fullPath = `/share/${item.download}`;
 
-  return archive.append(fs.createReadStream(file1), {
+  return archive.append(fs.createReadStream(fullPath), {
     name: sanitize(item.name, { replacement: '_' })
   });
 };
