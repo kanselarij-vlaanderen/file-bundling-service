@@ -4,24 +4,6 @@ import fs from 'fs';
 import archiver from './utils/archiver';
 import bodyParser from 'body-parser';
 
-const latinAdverbialNumberals = {
-  1: '',
-  2: 'bis',
-  3: 'ter',
-  4: 'quater',
-  5: 'quinquies',
-  6: 'sexies',
-  7: 'septies',
-  8: 'octies',
-  9: 'novies',
-  10: 'decies',
-  11: 'undecies',
-  12: 'duodecies',
-  13: 'ter decies',
-  14: 'quater decies',
-  15: 'quindecies'
-};
-
 app.use(cors());
 app.use(bodyParser.json({ type: 'application/*+json' }));
 
@@ -51,20 +33,12 @@ app.post('/bundleAllFiles', async (req, res) => {
 });
 
 const createUsefullAgendaItem = (item) => {
-  const latinVersionNumber = item.maxVersionNumber && latinAdverbialNumberals[item.maxVersionNumber].toUpperCase();
-  const name = `${item.maxVersionNumber && item.documentTitle
-    ? `${item.documentTitle} ${latinVersionNumber}`.trim()
-    : item.documentTitle || item.numberVR || item.documentVersionName || item.documentVersionId}.${
-    item.extension
-  }`;
-  let download;
-  if (item && item.download) {
-    download = item.download.split('share://')[1];
-  }
+  const name = `${item.name}.${item.extension}`;
+  const path = item.download.split('share://')[1];
 
   return {
     name,
-    download
+    download: path
   };
 };
 
