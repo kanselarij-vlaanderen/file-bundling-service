@@ -19,11 +19,11 @@ app.post('/bundleAllFiles', async (req, res) => {
         agendaitem_id: fileObject.agendaitem_id,
         agendaitemPrio: fileObject.agendaitemPrio,
         agendaitemName: `agendapunt_${fileObject.agendaitemPrio}`,
-        filesToDownload: [createUsefullAgendaItem(fileObject)]
+        filesToDownload: [createFileDetails(fileObject)]
       };
       items.push(item);
     } else {
-      foundItem.filesToDownload.push(createUsefullAgendaItem(fileObject));
+      foundItem.filesToDownload.push(createFileDetails(fileObject));
     }
     return items;
   }, []);
@@ -32,7 +32,7 @@ app.post('/bundleAllFiles', async (req, res) => {
   fs.createReadStream(path).pipe(res);
 });
 
-const createUsefullAgendaItem = (item) => {
+const createFileDetails = (item) => {
   const name = `${item.name}.${item.extension}`;
   const path = item.download.split('share://')[1];
 
