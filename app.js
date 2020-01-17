@@ -13,10 +13,10 @@ app.post('/bundleAllFiles', async (req, res) => {
   const files = JSON.parse(req.body.files);
 
   const agendaitems = files.reduce((items, fileObject) => {
-    const foundItem = items.find((item) => item.agendaitem_id === fileObject.agendaitem_id);
+    const foundItem = items.find((item) => item.agendaitem_id === fileObject.agendaitemId);
     if (!foundItem) {
       const item = {
-        agendaitem_id: fileObject.agendaitem_id,
+        agendaitem_id: fileObject.agendaitemId,
         agendaitemPrio: fileObject.agendaitemPrio,
         agendaitemName: `agendapunt_${fileObject.agendaitemPrio}`,
         filesToDownload: [createFileDetails(fileObject)]
@@ -33,7 +33,7 @@ app.post('/bundleAllFiles', async (req, res) => {
 });
 
 const createFileDetails = (item) => {
-  const name = `${item.name}.${item.extension}`;
+  const name = `${item.documentName}.${item.extension}`;
   const path = item.download.split('share://')[1];
 
   return {
