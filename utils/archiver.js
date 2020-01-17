@@ -1,6 +1,6 @@
 import sanitize from 'sanitize-filename';
-const fs = require('fs');
-const archiver = require('archiver');
+import fs from 'fs';
+import archiver from 'archiver';
 
 const archiveFiles = async (meetingDate, agenda, agendaitems) => {
   const path = `${__dirname}/test.zip`;
