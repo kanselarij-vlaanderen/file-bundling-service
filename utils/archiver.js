@@ -49,11 +49,9 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
   });
 };
 
-const appendFile = (archive, item) => {
-  const fullPath = `/share/${item.download}`;
-
-  return archive.append(fs.createReadStream(fullPath), {
-    name: sanitize(item.name, { replacement: '_' })
+const appendFile = (archive, file) => {
+  return archive.append(fs.createReadStream(file.path), {
+    name: sanitize(file.name, { replacement: '_' })
   });
 };
 

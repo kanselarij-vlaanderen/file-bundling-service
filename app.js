@@ -34,11 +34,12 @@ app.post('/bundleAllFiles', async (req, res) => {
 
 const createFileDetails = (item) => {
   const name = `${item.documentName}.${item.extension}`;
-  const path = item.download.split('share://')[1];
+  const path = item.download.replace('share://', '/share/');
+  console.log(name, path);
 
   return {
     name,
-    download: path
+    path
   };
 };
 
