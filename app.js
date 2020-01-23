@@ -19,6 +19,7 @@ app.post('/files/archive', async (req, res) => {
   });
 
   const path = await archiver.archiveFiles(filesToArchive);
+  res.set('Content-Type', 'application/zip');
   fs.createReadStream(path).pipe(res);
 });
 
