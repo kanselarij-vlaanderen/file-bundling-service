@@ -1,2 +1,2 @@
-FROM semtech/mu-javascript-template
+FROM mikidi/mu-javascript-template
 MAINTAINER Aad Versteden <madnificent@gmail.com>
