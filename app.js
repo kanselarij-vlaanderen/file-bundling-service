@@ -8,7 +8,7 @@ import sanitize from 'sanitize-filename';
 app.use(cors());
 app.use(bodyParser.json({ type: 'application/*+json' }));
 
-app.post('/bundleAllFiles', async (req, res) => {
+app.get('/files/archive', async (req, res) => {
   console.log(req.body);
   const files = req.body.data;
   const filesToArchive = files.map((file) => {
