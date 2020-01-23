@@ -1,8 +1,7 @@
-import sanitize from 'sanitize-filename';
 import fs from 'fs';
 import archiver from 'archiver';
 
-const archiveFiles = async (meetingDate, agenda, agendaitems) => {
+const archiveFiles = async (files) => {
   const path = `${__dirname}/test.zip`;
   const output = fs.createWriteStream(path);
 
@@ -12,12 +11,10 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
   archive.pipe(output);
 
   await Promise.all(
-    agendaitems.map((item) => {
-      return Promise.all(
-        item.filesToDownload.map((file) => {
-          return appendFile(archive, file);
-        })
-      );
+    files.map((file) => {
+      return archive.append(fs.createReadStream(file.path), {
+        name: file.name
+      });
     })
   );
 
@@ -46,12 +43,6 @@ const archiveFiles = async (meetingDate, agenda, agendaitems) => {
       console.log('Data has been drained');
       resolve(path);
     });
-  });
-};
-
-const appendFile = (archive, file) => {
-  return archive.append(fs.createReadStream(file.path), {
-    name: sanitize(file.name, { replacement: '_' })
   });
 };
 
