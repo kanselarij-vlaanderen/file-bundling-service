@@ -6,7 +6,7 @@ import bodyParser from 'body-parser';
 import sanitize from 'sanitize-filename';
 
 app.use(cors());
-app.use(bodyParser.json({ type: 'application/*+json' }));
+app.use(bodyParser.json({ type: 'application/*+json', limit: '50mb' }));
 
 app.post('/files/archive', async (req, res) => {
   console.log(req.body);
