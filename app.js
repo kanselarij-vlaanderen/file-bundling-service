@@ -1,26 +1,49 @@
 import cors from 'cors';
 import { app, errorHandler } from 'mu';
-import fs from 'fs';
-import archiver from './utils/archiver';
-import bodyParser from 'body-parser';
 import sanitize from 'sanitize-filename';
 
+import { getFilesById } from './queries/file';
+import { muFileArchive } from './archive';
+import { createCollection } from './queries/collection';
+import { createJob, attachCollectionToJob, attachResultToJob, SUCCESS, FAIL, updateJobStatus } from './queries/job';
+
 app.use(cors());
-// app.use(bodyParser.json({ type: 'application/*+json', limit: '50mb' }));
 
 app.post('/files/archive', async (req, res) => {
-  console.log(req.body);
-  const files = req.body.data;
-  const filesToArchive = files.map((file) => {
-    return {
-      path: file.attributes.uri.replace('share://', '/share/'),
-      name: sanitize(file.attributes.name, { replacement: '_' })
-    };
+  const job = await createJob();
+  res.send({
+    type: 'jobs',
+    id: job.id,
+    attributes: {
+      uri: job.uri,
+      status: job.status,
+      created: job.created
+    }
   });
+  try {
+    console.log(req.body);
+    const files = req.body.data.filter(f => f.type === 'files');
+    const authorizedFiles = await getFilesById(files.map(f => f.id));
+    const fileCollection = await createCollection(authorizedFiles.map(f => f.uri));
+    await attachCollectionToJob(job.uri, fileCollection.uri);
+    const filesToArchive = authorizedFiles.map((f) => {
+      return {
+        path: f.uri.replace('share://', '/share/'),
+        name: sanitize(f.name, { replacement: '_' }) // TODO: overload with name that got posted
+      };
+    });
+    const archiveName = req.query.name || 'archive.zip';
+    const muFile = await muFileArchive(archiveName, filesToArchive);
+    await attachResultToJob(job.uri, muFile.uri);
+    updateJobStatus(job.uri, SUCCESS);
+  } catch (e) {
+    console.log(e);
+    updateJobStatus(job.uri, FAIL);
+  }
+});
 
-  const path = await archiver.archiveFiles(filesToArchive);
-  res.set('Content-Type', 'application/zip');
-  fs.createReadStream(path).pipe(res);
+app.post('/delta', async (req, res) => {
+  // TODO
 });
 
 app.use(errorHandler);
