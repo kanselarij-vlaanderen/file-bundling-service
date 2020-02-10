@@ -27,16 +27,18 @@ async function createCollection (members) {
 async function findCollectionByMembers (members) {
   const queryString = `
     PREFIX prov: <http://www.w3.org/ns/prov#>
-    SELECT ?collection (COUNT(?member) AS ?membercount)
+    SELECT ?collection
     WHERE {
         ?collection a prov:Collection ;
              prov:hadMember ${members.map(sparqlEscapeUri).join(',\n                 ')} .
         ?collection prov:hadMember ?member .
+        FILTER (?member in (
+            ${members.map(sparqlEscapeUri).join(',\n            ')}
+        ))
     }
-    HAVING (?membercount = ${members.length})
   `;
-  const results = query(queryString);
-  if (results) {
+  const results = await query(queryString);
+  if (results.results.bindings.length > 0) {
     return results.results.bindings[0].collection.value;
   } else {
     return null;
