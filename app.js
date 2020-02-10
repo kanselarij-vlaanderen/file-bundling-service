@@ -4,7 +4,7 @@ import { app, errorHandler } from 'mu';
 import sanitize from 'sanitize-filename';
 import fs from 'fs';
 
-import { getFilesById } from './queries/file';
+import { getFilesById, getFile } from './queries/file';
 import { muFileArchive } from './archive';
 import { createCollection, findCollectionByMembers } from './queries/collection';
 import { createJob, attachCollectionToJob, attachResultToJob, SUCCESS, FAIL, updateJobStatus, findJobUsingCollection } from './queries/job';
@@ -23,6 +23,7 @@ async function findJob (req, res, next) {
     job = await findJobUsingCollection(collectionUri);
   }
   if (job) {
+    job.generated = await getFile(job.generated);
     res.status(200);
   } else {
     job = await createJob();
@@ -33,16 +34,35 @@ async function findJob (req, res, next) {
 }
 
 async function sendJob (req, res, next) {
-  res.send({
+  const payload = {
     type: 'jobs',
     id: res.job.id,
     attributes: {
       uri: res.job.uri,
       status: res.job.status,
-      created: res.job.created,
-      generated: res.job.generated
+      created: res.job.created
     }
-  });
+  };
+  if (res.statusCode === 200) {
+    payload.relationships = {
+      generated: {
+        data: { id: res.job.generated.id, type: 'files' }
+      }
+    };
+    payload.included = [{
+      type: 'files',
+      id: res.job.generated.id,
+      attributes: {
+        name: res.job.generated.name,
+        format: res.job.generated.format,
+        size: res.job.generated.size,
+        extension: res.job.generated.extension,
+        created: res.job.generated.created,
+        modified: res.job.generated.modified
+      }
+    }];
+  }
+  res.send(payload);
   if (res.statusCode === 201) {
     next();
   }
