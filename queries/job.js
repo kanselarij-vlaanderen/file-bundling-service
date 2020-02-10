@@ -5,7 +5,7 @@ import { parseSparqlResults } from './util';
 
 // const SCHEDULED = 'scheduled';
 const RUNNING = 'http://vocab.deri.ie/cogs#Running';
-const SUCCESS = 'http://vocab.deri.ie/cogs#Succes';
+const SUCCESS = 'http://vocab.deri.ie/cogs#Success';
 const FAIL = 'http://vocab.deri.ie/cogs#Fail';
 
 async function createJob () {
