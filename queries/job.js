@@ -119,7 +119,7 @@ async function findJobUsingCollection (collection) {
   if (parsedResults.length > 0) {
     return parsedResults[0];
   } else {
-    return 0;
+    return null;
   }
 }
 
