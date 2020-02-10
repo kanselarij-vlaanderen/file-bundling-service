@@ -99,6 +99,7 @@ async function findJobUsingCollection (collection) {
   PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 
   SELECT (?job AS ?uri) (?uuid as ?id) ?generated ?status ?created ?started ?ended WHERE {
       ${sparqlEscapeUri(collection)} a prov:Collection .
@@ -107,6 +108,8 @@ async function findJobUsingCollection (collection) {
           ext:status ${sparqlEscapeUri(SUCCESS)} ;
           ext:status ?status ;
           prov:generated ?generated .
+      ?generated a nfo:FileDataObject ;
+          mu:uuid ?generatedId .
       OPTIONAL { ?job dct:created ?created }
       OPTIONAL { ?job prov:startedAtTime ?started }
       OPTIONAL { ?job prov:endedAtTime ?ended }
