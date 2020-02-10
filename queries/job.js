@@ -1,6 +1,7 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
 // import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { RESOURCE_BASE } from '../config';
+import { parseSparqlResults } from './util';
 
 // const SCHEDULED = 'scheduled';
 const RUNNING = 'http://vocab.deri.ie/cogs#Running';
@@ -91,10 +92,39 @@ async function updateJobStatus (uri, status) {
   await update(queryString);
 }
 
+async function findJobUsingCollection (collection) {
+  const queryString = `
+  PREFIX cogs: <http://vocab.deri.ie/cogs#>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX dct: <http://purl.org/dc/terms/>
+
+  SELECT (?job AS ?uri) (?uuid as ?id) ?generated ?status ?created ?started ?ended WHERE {
+      ${sparqlEscapeUri(collection)} a prov:Collection .
+      ?job a cogs:Job ;
+          mu:uuid ?uuid ;
+          ext:status ${sparqlEscapeUri(SUCCESS)} ;
+          ext:status ?status ;
+          prov:generated ?generated .
+      OPTIONAL { ?job dct:created ?created }
+      OPTIONAL { ?job prov:startedAtTime ?started }
+      OPTIONAL { ?job prov:endedAtTime ?ended }
+  }`;
+  const results = await query(queryString);
+  const parsedResults = parseSparqlResults(results);
+  if (parsedResults.length > 0) {
+    return parsedResults[0];
+  } else {
+    return 0;
+  }
+}
+
 export {
   createJob,
   attachCollectionToJob,
   attachResultToJob,
   updateJobStatus,
-  RUNNING, SUCCESS, FAIL
+  RUNNING, SUCCESS, FAIL,
+  findJobUsingCollection
 };
