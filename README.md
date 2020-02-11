@@ -1,5 +1,6 @@
 # File bundling service
 A service for creating (zip) archives. With caching support.
+
 As archiving large amounts of files typically is a (timely) expensive operation, a job-like approach is used to create these archives.
 
 ## Configuration snippets
@@ -74,6 +75,7 @@ Optional, for exposing jobs in JSONAPI
   :on-path "jobs")
 ```
 *Note that `generated` is exposed as a uri-attribute instead of as a relationship to a file. This allows using the job model for multiple kinds of jobs, as other jobs may generate something else than a file. This shouldn't be too bad however, as we will only use resources to monitor the jobs status*
+
 `repository.lisp`:
 ```lisp
 (add-prefix "ext" "http://mu.semte.ch/vocabularies/ext/")
@@ -94,7 +96,7 @@ end
 Request the creation of an archive.
 
 ##### Request
-The files to archive should be specified in the request body as follows:
+The files to archive should be specified in the request body as an array of JSONAPI objects:
 ```js
 {
   "data": [
