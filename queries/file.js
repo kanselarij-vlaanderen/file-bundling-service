@@ -9,7 +9,7 @@ PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 PREFIX dbpedia: <http://dbpedia.org/ontology/>
 PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
 
-SELECT DISTINCT (?virtualFile AS ?uri) (?physicalFile AS ?physicalUri) ?name ?extension
+SELECT DISTINCT (?virtualFile AS ?uri) (?physicalFile AS ?physicalUri) (?uuid as ?id) ?name ?extension
 WHERE {
     ?virtualFile a nfo:FileDataObject ;
         mu:uuid ?uuid .

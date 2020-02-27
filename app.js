@@ -74,9 +74,13 @@ async function runJob (req, res) {
     const fileCollection = await createCollection(req.authorizedFiles.map(f => f.uri));
     await attachCollectionToJob(res.job.uri, fileCollection.uri);
     const filesToArchive = req.authorizedFiles.map((f) => {
+      const fileWithRequestedName = req.files.filter((file) => file.id === f.id).filter((file) => {
+        return file.attributes && file.attributes.name;
+      })[0];
+      const name = fileWithRequestedName ? fileWithRequestedName.attributes.name : f.name;
       return {
         path: f.physicalUri.replace('share://', '/share/'),
-        name: sanitize(f.name, { replacement: '_' }) // TODO: overload with name that got posted
+        name: sanitize(name, { replacement: '_' })
       };
     });
     const archiveName = req.query.name || 'archive.zip';
