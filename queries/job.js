@@ -71,7 +71,7 @@ async function updateJobStatus (uri, status) {
   } else {
     timePred = 'http://www.w3.org/ns/prov#startedAtTime';
   }
-  let escapedUri = sparqlEscapeUri(uri);
+  const escapedUri = sparqlEscapeUri(uri);
   const queryString = `
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
