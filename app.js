@@ -34,8 +34,9 @@ async function findJob (req, res, next) {
 }
 
 async function sendJob (req, res, next) {
-  const payload = {
-    type: 'jobs',
+  const payload = {};
+  payload.data = {
+    type: 'file-bundling-jobs',
     id: res.job.id,
     attributes: {
       uri: res.job.uri,
@@ -44,7 +45,7 @@ async function sendJob (req, res, next) {
     }
   };
   if (res.statusCode === 200) {
-    payload.relationships = {
+    payload.data.relationships = {
       generated: {
         data: { id: res.job.generated.id, type: 'files' }
       }
