@@ -106,7 +106,8 @@ async function findJobUsingCollection (collection) {
       ?job a ext:FileBundlingJob ;
           mu:uuid ?uuid ;
           ext:status ?status ;
-          prov:generated ?generated .
+          prov:generated ?generated ;
+          prov:used ${sparqlEscapeUri(collection)} .
       VALUES ?status {
         ${sparqlEscapeUri(SUCCESS)}
         ${sparqlEscapeUri(RUNNING)}
