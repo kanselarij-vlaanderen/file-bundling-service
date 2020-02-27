@@ -27,7 +27,7 @@ async function createCollection (members) {
 async function findCollectionByMembers (members) {
   const queryString = `
     PREFIX prov: <http://www.w3.org/ns/prov#>
-    SELECT ?collection
+    SELECT DISTINCT ?collection
     WHERE {
         ?collection a prov:Collection ;
              prov:hadMember ${members.map(sparqlEscapeUri).join(',\n                 ')} .
