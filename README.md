@@ -98,7 +98,7 @@ Request the creation of an archive.
 
 ##### Request
 The files to archive should be specified in the request body as an array of JSONAPI objects:
-```js
+```json
 {
   "data": [
     {
@@ -122,14 +122,16 @@ Note however that doing so may cause unwanted names when serving an archive from
 ###### 201 Created
 On successful creation of a job.
 
-```javascript
+```json
 {
-  "type": "jobs",
-  "id": "27d60a10-4c1e-11ea-bb67-a91f9ef5e3d1",
-  "attributes": {
-    "uri": "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/27d60a10-4c1e-11ea-bb67-a91f9ef5e3d1",
-    "status": "http://vocab.deri.ie/cogs#Running",
-    "created": "2020-02-10T15:58:18.929Z"
+  "data": {
+    "type": "file-bundling-jobs",
+    "id": "5f680870-5984-11ea-98be-11315490e00b",
+    "attributes": {
+      "uri": "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/5f680870-5984-11ea-98be-11315490e00b",
+      "status": "http://vocab.deri.ie/cogs#Running",
+      "created": "2020-02-27T17:12:45.943Z"
+    }
   }
 }
 ```
@@ -137,20 +139,22 @@ On successful creation of a job.
 ###### 200 OK
 When an archive for the exact set of requested files *already is available*, the job that created this archive will be returned. The file this job previously generated, will be included in the JSONAPI response.
 
-```javascript
+```json
 {
-  "type": "jobs",
-  "id": "6a8a1150-4c1c-11ea-bb67-a91f9ef5e3d1",
-  "attributes": {
-    "uri": "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/6a8a1150-4c1c-11ea-bb67-a91f9ef5e3d1",
-    "status": "http://vocab.deri.ie/cogs#Success",
-    "created": "2020-02-10T15:45:51.845Z"
-  },
-  "relationships": {
-    "generated": {
-      "data": {
-        "id": "6a989040-4c1c-11ea-bb67-a91f9ef5e3d1",
-        "type": "files"
+  "data": {
+    "type": "file-bundling-jobs",
+    "id": "5f680870-5984-11ea-98be-11315490e00b",
+    "attributes": {
+      "uri": "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/5f680870-5984-11ea-98be-11315490e00b",
+      "status": "http://vocab.deri.ie/cogs#Success",
+      "created": "2020-02-27T17:12:45.943Z"
+    },
+    "relationships": {
+      "generated": {
+        "data": {
+          "id": "5f7527d0-5984-11ea-98be-11315490e00b",
+          "type": "files"
+        }
       }
     }
   },
