@@ -7,7 +7,7 @@ As archiving large amounts of files typically is a (timely) expensive operation,
 
 #### docker-compose
 
-```
+```yml
 file-bundling:
   image: kanselarij/file-bundling-service
   volumes:
@@ -44,7 +44,7 @@ Users of this service should have read and write access to following Classes
     object: {
       type: 'uri',
       value: 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject'
-    },
+    }
   },
   callback: {
     url: 'http://file-bundling/delta',
