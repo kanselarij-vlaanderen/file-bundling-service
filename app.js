@@ -90,22 +90,21 @@ async function runJob (req, res) {
 }
 
 app.post('/delta', bodyParser.json(), async (req, res) => {
-  console.log("New delta's");
-  console.log(req.body);
   const deletionDeltas = req.body.map(d => d.deletes).reduce((ds, d) => Array.prototype.join.apply(ds, d));
+  console.log(`New delta's: ${deletionDeltas.length} deletes in total`);
   const deletedFiles = deletionDeltas.filter(delta => {
     return delta.predicate.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
       delta.object.value === 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject';
   }).map(delta => delta.subject.value);
-  console.log("delted file's" + deletedFiles);
+  console.log('Of which are deleted files:', deletedFiles);
   for (var deletedFile of deletedFiles) {
     const jobs = await findJobsUsingFile(deletedFile);
-    console.log("jobs to delete", jobs);
+    console.log('Jobs to delete:', jobs);
     for (const job of jobs) {
       try {
         fs.unlinkSync(job.physf.replace('share://', '/share/'));
       } catch (e) {
-        console.log('Failed to delete archive file ' + job.physf);
+        console.log(`Failed to delete archive file <${job.physf}> from disk`);
         continue;
       }
       await removeJobsUsingFile(deletedFile);
