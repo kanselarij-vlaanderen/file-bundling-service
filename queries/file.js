@@ -7,13 +7,16 @@ const getFilesById = async function (fileIds) {
 PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
 PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 PREFIX dbpedia: <http://dbpedia.org/ontology/>
+PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
 
-SELECT DISTINCT (?file AS ?uri) ?name ?extension
+SELECT DISTINCT (?virtualFile AS ?uri) (?physicalFile AS ?physicalUri) ?name ?extension
 WHERE {
-    ?file a nfo:FileDataObject ;
+    ?virtualFile a nfo:FileDataObject ;
         mu:uuid ?uuid .
-    OPTIONAL { ?file nfo:fileName ?name . }
-    OPTIONAL { ?file dbpedia:fileExtension ?extension . }
+    ?physicalFile a nfo:FileDataObject ;
+       nie:dataSource ?virtualFile .
+    OPTIONAL { ?virtualFile nfo:fileName ?name . }
+    OPTIONAL { ?virtualFile dbpedia:fileExtension ?extension . }
     VALUES ?uuid {
         ${fileIds.map(sparqlEscapeString).join('\n        ')}
     }
