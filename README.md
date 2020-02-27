@@ -1,7 +1,7 @@
 # File bundling service
-A service for creating (zip) archives. With caching support.
+A service for creating (zip) archives from [mu-files](https://github.com/mu-semtech/file-service). With caching support.
 
-As archiving large amounts of files typically is a (timely) expensive operation, a job-like approach is used to create these archives.
+As archiving large amounts of files typically is a (timely) expensive operation, a job-like approach is used to create these archives. See [*"The job datamodel"*](#The job datamodel) below for more info.
 
 ## Configuration snippets
 
