@@ -23,7 +23,7 @@ async function createJob () {
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
 
   INSERT DATA {
-      ${sparqlEscapeUri(job.uri)} a cogs:Job ;
+      ${sparqlEscapeUri(job.uri)} a cogs:Job , ext:FileBundlingJob ;
           mu:uuid ${sparqlEscapeString(job.id)} ;
           ext:status ${sparqlEscapeString(job.status)} ;
           dct:created ${sparqlEscapeDateTime(job.created)} .
@@ -41,7 +41,7 @@ async function attachCollectionToJob (job, collection) {
       ${sparqlEscapeUri(job)} prov:used ${sparqlEscapeUri(collection)} .
   }
   WHERE {
-      ${sparqlEscapeUri(job)} a cogs:Job .
+      ${sparqlEscapeUri(job)} a ext:FileBundlingJob .
       ${sparqlEscapeUri(collection)} a prov:Collection .
   }`;
   await update(queryString);
@@ -57,7 +57,7 @@ async function attachResultToJob (job, result) {
       ${sparqlEscapeUri(job)} prov:generated ${sparqlEscapeUri(result)} .
   }
   WHERE {
-      ${sparqlEscapeUri(job)} a cogs:Job .
+      ${sparqlEscapeUri(job)} a ext:FileBundlingJob .
   }`;
   await update(queryString);
   return job;
@@ -85,7 +85,7 @@ async function updateJobStatus (uri, status) {
           ${sparqlEscapeUri(timePred)} ${sparqlEscapeDateTime(time)} .
   }
   WHERE {
-      ${escapedUri} a cogs:Job .
+      ${escapedUri} a ext:FileBundlingJob .
       OPTIONAL { ${escapedUri} ext:status ?status }
       OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
   }`;
@@ -103,7 +103,7 @@ async function findJobUsingCollection (collection) {
 
   SELECT (?job AS ?uri) (?uuid as ?id) ?generated ?status ?created ?started ?ended WHERE {
       ${sparqlEscapeUri(collection)} a prov:Collection .
-      ?job a cogs:Job ;
+      ?job a ext:FileBundlingJob ;
           mu:uuid ?uuid ;
           ext:status ${sparqlEscapeUri(SUCCESS)} ;
           ext:status ?status ;

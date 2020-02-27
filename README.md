@@ -29,6 +29,7 @@ Users of this service should have read and write access to following Classes
 "http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject"
 "http://www.w3.org/ns/prov#Collection"
 "http://vocab.deri.ie/cogs#Job"
+"http://mu.semte.ch/vocabularies/ext/FileBundlingJob"
 ```
 
 #### Delta notifier

@@ -5,7 +5,7 @@ import { parseSparqlResults } from './util';
 const WHERE_TEMPLATE = `
 WHERE {
     GRAPH ?g {
-        ?job a cogs:Job ;
+        ?job a ext:FileBundlingJob ;
             ?jobP ?jobO .
         ?job prov:used ?collection .
         ?collection a prov:Collection ;
@@ -22,10 +22,10 @@ WHERE {
 
 async function findJobsUsingFile (fileUri) {
   const queryString = `
-PREFIX cogs: <http://vocab.deri.ie/cogs#>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
 SELECT DISTINCT ?job ?collection ?file ?physf
 ` + WHERE_TEMPLATE.replace('#FILE_URI_PLACEHOLDER#', sparqlEscapeUri(fileUri)) + `
@@ -38,10 +38,10 @@ ORDER BY ?job ?collection
 
 async function removeJobsUsingFile (fileUri) {
   const queryString = `
-PREFIX cogs: <http://vocab.deri.ie/cogs#>
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
 DELETE {
     GRAPH ?g {
