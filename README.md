@@ -60,22 +60,23 @@ Users of this service should have read and write access to following Classes
 
 #### Resources
 
-Optional, for exposing jobs in JSONAPI
 `domain.lisp`:
 ```lisp
-(define-resource job ()
-  :class (s-prefix "cogs:Job")
+(define-resource file-bundling-job ()
+  :class (s-prefix "ext:FileBundlingJob") ; "cogs:Job"
   :properties `((:created       :datetime  ,(s-prefix "dct:created"))
                 (:status        :uri       ,(s-prefix "ext:status"))
                 (:time-started  :datetime  ,(s-prefix "prov:startedAtTime"))
                 (:time-ended    :datetime  ,(s-prefix "prov:endedAtTime"))
                 (:generated     :uri       ,(s-prefix "prov:generated"))
   )
-  ; :resource-base (s-url "http://example.com/id/jobs/")
+  :has-one `((file              :via     ,(s-prefix "prov:generated")
+                                :as "generated"))
+  ; :resource-base (s-url "http://example.com/id/file-bundling-jobs/")
   :features '(include-uri)
-  :on-path "jobs")
+  :on-path "file-bundling-jobs"
+)
 ```
-*Note that `generated` is exposed as a uri-attribute instead of as a relationship to a file. This allows using the job model for multiple kinds of jobs, as other jobs may generate something else than a file. This shouldn't be too bad however, as we will only use resources to monitor the jobs status*
 
 `repository.lisp`:
 ```lisp
@@ -87,8 +88,8 @@ Optional, for exposing jobs in JSONAPI
 
 `dispatcher.ex`:
 ```elixir
-match "/jobs/*path", @any do
-  Proxy.forward conn, path, "http://cache/jobs/"
+match "/file-bundling-jobs/*path", @any do
+  Proxy.forward conn, path, "http://cache/file-bundling-jobs/"
 end
 ```
 
