@@ -15,7 +15,7 @@ WHERE {
     OPTIONAL { ?file nfo:fileName ?name . }
     OPTIONAL { ?file dbpedia:fileExtension ?extension . }
     VALUES ?uuid {
-        ${fileIds.map(sparqlEscapeString).join('        \n')}
+        ${fileIds.map(sparqlEscapeString).join('\n        ')}
     }
 }
 `;
