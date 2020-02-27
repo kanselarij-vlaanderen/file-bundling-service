@@ -24,7 +24,7 @@ end
 
 #### Authorization
 
-Users of this service should have read and write access to following Classes
+Users of this service should have `:read`, `:write` and `:read-for-write` access to following Classes
 ```
 "http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject"
 "http://www.w3.org/ns/prov#Collection"
@@ -53,7 +53,7 @@ Users of this service should have read and write access to following Classes
   options: {
     resourceFormat: 'v0.0.1',
     gracePeriod: 250,
-    ignoreFromSelf: false
+    ignoreFromSelf: false // Don't ignore from self in case of zip in zip
   }
 },
 ```
