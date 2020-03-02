@@ -3,7 +3,7 @@ import { parseSparqlResults } from './util';
 import { RESOURCE_BASE } from '../config';
 
 const getFilesById = async function (fileIds) {
-  const BATCH_SIZE = 3;
+  const BATCH_SIZE = 75;
   let indexPointer = 0;
   const nBatches = Math.ceil(fileIds.length / BATCH_SIZE);
   let files = [];
