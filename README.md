@@ -24,7 +24,7 @@ end
 
 #### Authorization
 
-Users of this service should have `:read`, `:write` and `:read-for-write` access to following Classes
+Users of this service should have `:read`, `:write` and `:read-for-write` access to following rdf types
 ```
 "http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject"
 "http://www.w3.org/ns/prov#Collection"
@@ -68,7 +68,6 @@ Users of this service should have `:read`, `:write` and `:read-for-write` access
                 (:status        :uri       ,(s-prefix "ext:status"))
                 (:time-started  :datetime  ,(s-prefix "prov:startedAtTime"))
                 (:time-ended    :datetime  ,(s-prefix "prov:endedAtTime"))
-                (:generated     :uri       ,(s-prefix "prov:generated"))
   )
   :has-one `((file              :via     ,(s-prefix "prov:generated")
                                 :as "generated"))
