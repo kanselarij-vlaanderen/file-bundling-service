@@ -9,7 +9,7 @@ function sleep (ms) {
 }
 
 const getFilesById = async function (fileIds) {
-  const BATCH_SIZE = 75;
+  const BATCH_SIZE = 50;
   let indexPointer = 0;
   const nBatches = Math.ceil(fileIds.length / BATCH_SIZE);
   let files = [];
@@ -47,7 +47,6 @@ WHERE {
 }
     `;
     const results = await query(q);
-    await sleep(100);
     files = files.concat(parseSparqlResults(results));
   }
   console.log(`Returning ${files.length} files`);
