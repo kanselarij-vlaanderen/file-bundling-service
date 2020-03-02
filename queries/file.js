@@ -2,54 +2,25 @@ import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateT
 import { parseSparqlResults } from './util';
 import { RESOURCE_BASE } from '../config';
 
-const getFilesById = async function (fileIds) {
-  const BATCH_SIZE = 5;
-  let indexPointer = 0;
-  const nBatches = Math.ceil(fileIds.length / BATCH_SIZE);
-  let files = [];
-  console.log(`Fetching ${fileIds.length} fileIds total in ${nBatches} batches`);
-  for (let i = 0; i < nBatches; i++) {
-    const lastBatch = i === (nBatches - 1);
-    indexPointer = i * BATCH_SIZE;
-    let fileIdsBatch;
-    if (lastBatch) {
-      fileIdsBatch = fileIds.slice(indexPointer, fileIds.length);
-      if (fileIdsBatch.length === 0) {
-        break;
-      }
-    } else {
-      fileIdsBatch = fileIds.slice(indexPointer, indexPointer + BATCH_SIZE);
-    }
-    console.log(`Running batch ${i + 1}/${nBatches} for file id's`, fileIdsBatch);
-    const q = `
-PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
-PREFIX dbpedia: <http://dbpedia.org/ontology/>
-PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-
-SELECT DISTINCT (?virtualFile AS ?uri) (?physicalFile AS ?physicalUri) (?uuid as ?id) ?name ?extension
-WHERE {
-    ?virtualFile a nfo:FileDataObject ;
-        mu:uuid ?uuid .
-    ?physicalFile a nfo:FileDataObject ;
-        nie:dataSource ?virtualFile .
-    ?virtualFile nfo:fileName ?name .
-    ?virtualFile dbpedia:fileExtension ?extension .
-    VALUES ?uuid {
-        ${fileIdsBatch.map(sparqlEscapeString).join('\n        ')}
-    }
-}
-    `;
-    const results = await query(q);
-    files = files.concat(parseSparqlResults(results));
-  }
-  console.log(`Returning ${files.length} files`);
-  return files;
-};
-
 // const getFilesById = async function (fileIds) {
+//   const BATCH_SIZE = 5;
+//   let indexPointer = 0;
+//   const nBatches = Math.ceil(fileIds.length / BATCH_SIZE);
 //   let files = [];
-//   for (let i = 0; i < fileIds.length; i++) {
+//   console.log(`Fetching ${fileIds.length} fileIds total in ${nBatches} batches`);
+//   for (let i = 0; i < nBatches; i++) {
+//     const lastBatch = i === (nBatches - 1);
+//     indexPointer = i * BATCH_SIZE;
+//     let fileIdsBatch;
+//     if (lastBatch) {
+//       fileIdsBatch = fileIds.slice(indexPointer, fileIds.length);
+//       if (fileIdsBatch.length === 0) {
+//         break;
+//       }
+//     } else {
+//       fileIdsBatch = fileIds.slice(indexPointer, indexPointer + BATCH_SIZE);
+//     }
+//     console.log(`Running batch ${i + 1}/${nBatches} for file id's`, fileIdsBatch);
 //     const q = `
 // PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
 // PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
@@ -59,19 +30,48 @@ WHERE {
 // SELECT DISTINCT (?virtualFile AS ?uri) (?physicalFile AS ?physicalUri) (?uuid as ?id) ?name ?extension
 // WHERE {
 //     ?virtualFile a nfo:FileDataObject ;
-//         mu:uuid ${sparqlEscapeString(fileIds[i])} ;
 //         mu:uuid ?uuid .
 //     ?physicalFile a nfo:FileDataObject ;
 //         nie:dataSource ?virtualFile .
 //     ?virtualFile nfo:fileName ?name .
 //     ?virtualFile dbpedia:fileExtension ?extension .
+//     VALUES ?uuid {
+//         ${fileIdsBatch.map(sparqlEscapeString).join('\n        ')}
+//     }
 // }
 //     `;
 //     const results = await query(q);
 //     files = files.concat(parseSparqlResults(results));
 //   }
+//   console.log(`Returning ${files.length} files`);
 //   return files;
 // };
+
+const getFilesById = async function (fileIds) {
+  let files = [];
+  for (let i = 0; i < fileIds.length; i++) {
+    const q = `
+PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+PREFIX dbpedia: <http://dbpedia.org/ontology/>
+PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+
+SELECT DISTINCT (?virtualFile AS ?uri) (?physicalFile AS ?physicalUri) (?uuid as ?id) ?name ?extension
+WHERE {
+    ?virtualFile a nfo:FileDataObject ;
+        mu:uuid ${sparqlEscapeString(fileIds[i])} ;
+        mu:uuid ?uuid .
+    ?physicalFile a nfo:FileDataObject ;
+        nie:dataSource ?virtualFile .
+    ?virtualFile nfo:fileName ?name .
+    ?virtualFile dbpedia:fileExtension ?extension .
+}
+    `;
+    const results = await query(q);
+    files = files.concat(parseSparqlResults(results));
+  }
+  return files;
+};
 
 const createFile = async function (file, physicalUri) {
   const uri = RESOURCE_BASE + `/files/${file.id}`;
