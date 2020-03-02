@@ -9,7 +9,7 @@ function sleep (ms) {
 }
 
 const getFilesById = async function (fileIds) {
-  const BATCH_SIZE = 50;
+  const BATCH_SIZE = 10;
   let indexPointer = 0;
   const nBatches = Math.ceil(fileIds.length / BATCH_SIZE);
   let files = [];
