@@ -10,8 +10,6 @@ import { createCollection, findCollectionByMembers } from './queries/collection'
 import { createJob, attachCollectionToJob, attachResultToJob, SUCCESS, FAIL, updateJobStatus, findJobUsingCollection } from './queries/job';
 import { findJobsUsingFile, removeJobsUsingFile } from './queries/delta';
 
-app.use(cors());
-
 app.post('/files/archive', findJob, sendJob, runJob);
 
 async function findJob (req, res, next) {
