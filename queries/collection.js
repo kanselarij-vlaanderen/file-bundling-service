@@ -25,43 +25,83 @@ async function createCollection (members) {
   };
 }
 
-async function findCollectionByMembers (members) {
+async function findCollectionsHavingMembers (members) {
+  /*
+   * Finding collections that at least have the members we want.
+   * Batched, because Virtuoso 7.2.5.1 doesn't like testing more than 96 members at the same time in our current setup:
+   * Virtuoso 37000 Error SP031: SPARQL: Internal error: The length of generated SQL text has exceeded 10000 lines of code
+   */
+  const BATCH_SIZE = 75;
+  let membersToTest = members;
+  let batchSize = membersToTest.length > BATCH_SIZE ? BATCH_SIZE : membersToTest.length;
+  let isFinalBatch = membersToTest.length <= BATCH_SIZE;
+  let membersBatch = membersToTest.slice(0, batchSize);
   const queryString = `
 PREFIX prov: <http://www.w3.org/ns/prov#>
 SELECT DISTINCT ?collection
 WHERE {
     ?collection a prov:Collection ;
-         prov:hadMember ${members.map(sparqlEscapeUri).join(',\n         ')} .
+         prov:hadMember ${membersBatch.map(sparqlEscapeUri).join(',\n         ')} .
 }
   `;
-  const results = await query(queryString);
-  if (results.results.bindings.length > 1) {
-    const collections = parseSparqlResults(results).map(c => c.collection);
-    /*
-     * Matches the collections that are no good.
-     * Used as an alternative to FILTER ( NOT EXISTS { FILTER NOT IN ( ... ) } )
-     * because Virtuoso 7.2.5.1 doesn't like that (Virtuoso 42000 Error SQ200: Stack Overflow in cost model)
-     */
+  let results = await query(queryString);
+  let collections = parseSparqlResults(results).map(c => c.collection);
+  if (isFinalBatch) {
+    return collections;
+  } else {
+    membersToTest = membersToTest.slice(BATCH_SIZE);
+  }
+  while (collections.length > 0) {
+    batchSize = membersToTest.length > BATCH_SIZE ? BATCH_SIZE : membersToTest.length;
+    isFinalBatch = membersToTest.length <= BATCH_SIZE;
+    membersBatch = membersToTest.slice(0, batchSize);
+    const queryString = `
+PREFIX prov: <http://www.w3.org/ns/prov#>
+SELECT DISTINCT ?collection
+WHERE {
+    ?collection a prov:Collection ;
+         prov:hadMember ${membersBatch.map(sparqlEscapeUri).join(',\n         ')} .
+    VALUES ?collection {
+        ${collections.map(sparqlEscapeUri).join('\n        ')}
+    }
+}
+    `;
+    results = await query(queryString);
+    collections = parseSparqlResults(results).map(c => c.collection);
+    if (isFinalBatch) {
+      break;
+    } else {
+      membersToTest = membersToTest.slice(BATCH_SIZE);
+    }
+  }
+  return collections;
+}
+async function findCollectionByMembers (members) {
+  const collections = await findCollectionsHavingMembers(members);
+  /*
+   * Narrow down the collections to the ones having no more members than the ones we want.
+   * Used as an alternative to FILTER ( NOT EXISTS { FILTER NOT IN ( ... ) } )
+   * because Virtuoso 7.2.5.1 doesn't like that (Virtuoso 42000 Error SQ200: Stack Overflow in cost model)
+   */
+  if (collections.length > 1) {
     for (let i = 0; i < collections.length; i++) {
       const collection = collections[i];
       const filterQueryString = `
 PREFIX prov: <http://www.w3.org/ns/prov#>
-ASK {
+SELECT (COUNT(DISTINCT ?member) AS ?memberCount)
+WHERE {
     ${sparqlEscapeUri(collection)} a prov:Collection ;
         prov:hadMember ?member .
-    FILTER( ?member NOT IN (
-        ${members.map(sparqlEscapeUri).join(',\n                ')}
-    ))
 }
        `;
-      const withMoreExists = (await query(filterQueryString)).boolean;
-      if (!withMoreExists) {
+      const memberCount = parseSparqlResults(await query(filterQueryString))[0].memberCount;
+      if (memberCount === members.length) {
         return collection;
       }
     }
     return null;
-  } else if (results.results.bindings.length > 0) {
-    return results.results.bindings[0].collection.value;
+  } else if (collections.length > 0) {
+    return collections[0];
   } else {
     return null;
   }
