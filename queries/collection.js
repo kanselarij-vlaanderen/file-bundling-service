@@ -30,8 +30,10 @@ async function findCollectionsHavingMembers (members) {
    * Finding collections that at least have the members we want.
    * Batched, because Virtuoso 7.2.5.1 doesn't like testing more than 96 members at the same time in our current setup:
    * Virtuoso 37000 Error SP031: SPARQL: Internal error: The length of generated SQL text has exceeded 10000 lines of code
+   * Batched smaller , because Virtuoso 7.2.5.1 doesn't like testing more than 75 members at the same time in our current setup:
+   * Virtuoso 42000 Error SR483: Stack Overflow
    */
-  const BATCH_SIZE = 75;
+  const BATCH_SIZE = 50;
   let membersToTest = members;
   let batchSize = membersToTest.length > BATCH_SIZE ? BATCH_SIZE : membersToTest.length;
   let isFinalBatch = membersToTest.length <= BATCH_SIZE;
