@@ -2,6 +2,12 @@ import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateT
 import { parseSparqlResults } from './util';
 import { RESOURCE_BASE } from '../config';
 
+function sleep (ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 const getFilesById = async function (fileIds) {
   const BATCH_SIZE = 75;
   let indexPointer = 0;
@@ -41,6 +47,7 @@ WHERE {
 }
     `;
     const results = await query(q);
+    await sleep(100);
     files = files.concat(parseSparqlResults(results));
   }
   console.log(`Returning ${files.length} files`);
