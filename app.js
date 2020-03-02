@@ -14,10 +14,10 @@ app.post('/files/archive', findJob, sendJob, runJob);
 async function findJob (req, res, next) {
   req.files = req.body.data.filter(f => f.type === 'files');
   req.authorizedFiles = await getFilesById(req.files.map(f => f.id));
-  const collectionUri = await findCollectionByMembers(req.authorizedFiles.map(f => f.uri));
+  const collection = await findCollectionByMembers(req.authorizedFiles.map(f => f.uri));
   let job;
-  if (collectionUri) {
-    job = await findJobUsingCollection(collectionUri);
+  if (collection) {
+    job = await findJobUsingCollection(collection.uri);
   }
   if (job) {
     job.generated = await getFile(job.generated);
