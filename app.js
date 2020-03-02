@@ -1,4 +1,3 @@
-import cors from 'cors';
 import bodyParser from 'body-parser';
 import { app, errorHandler } from 'mu';
 import sanitize from 'sanitize-filename';
