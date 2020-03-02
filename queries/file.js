@@ -43,7 +43,7 @@ WHERE {
     const results = await query(q);
     files = files.concat(parseSparqlResults(results));
   }
-  console.log(`Returning ${files.length} files`, files);
+  console.log(`Returning ${files.length} files`);
   return files;
 };
 
