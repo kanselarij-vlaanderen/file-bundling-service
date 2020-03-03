@@ -109,17 +109,19 @@ async function findJobTodo (job) {
   PREFIX dct: <http://purl.org/dc/terms/>
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 
-  SELECT (?job AS ?uri) (?uuid as ?id) ?status ?used WHERE {
+  SELECT (?uuid as ?id) ?status ?used WHERE {
       GRAPH ?g {
           ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
-              mu:uuid ?uuid ;
-              ext:status ?status .
-          OPTIONAL { ?job prov:used ?used . }
-          FILTER NOT EXISTS {
-              ?job ext:status ?status .
-              VALUES ?status {
-                  ${sparqlEscapeUri(SUCCESS)}
-                  ${sparqlEscapeUri(FAIL)}
+              mu:uuid ?uuid .
+          OPTIONAL { ${sparqlEscapeUri(job)} prov:used ?used . }
+          OPTIONAL {
+              ${sparqlEscapeUri(job)} ext:status ?status .
+              FILTER NOT EXISTS {
+                  ${sparqlEscapeUri(job)} ext:status ?status .
+                  VALUES ?status {
+                      ${sparqlEscapeUri(SUCCESS)}
+                      ${sparqlEscapeUri(FAIL)}
+                  }
               }
           }
       }
@@ -127,6 +129,7 @@ async function findJobTodo (job) {
   const results = await querySudo(queryString);
   const parsedResults = parseSparqlResults(results);
   if (parsedResults.length > 0) {
+    parsedResults[0].uri = job;
     return parsedResults[0];
   } else {
     return null;
