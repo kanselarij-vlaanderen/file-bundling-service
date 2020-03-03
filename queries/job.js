@@ -1,5 +1,5 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
-// import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
+import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { RESOURCE_BASE, RDF_JOB_TYPE } from '../config';
 import { parseSparqlResults } from './util';
 
@@ -13,7 +13,6 @@ async function createJob () {
   const job = {
     uri: RESOURCE_BASE + `/file-bundling-jobs/${uuid}`,
     id: uuid,
-    status: RUNNING,
     created: new Date()
   };
   const queryString = `
@@ -25,10 +24,9 @@ async function createJob () {
   INSERT DATA {
       ${sparqlEscapeUri(job.uri)} a cogs:Job , ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
           mu:uuid ${sparqlEscapeString(job.id)} ;
-          ext:status ${sparqlEscapeString(job.status)} ;
           dct:created ${sparqlEscapeDateTime(job.created)} .
   }`;
-  await update(queryString);
+  await update(queryString); // NO SUDO
   return job;
 }
 
@@ -54,12 +52,16 @@ async function attachResultToJob (job, result) {
   PREFIX prov: <http://www.w3.org/ns/prov#>
 
   INSERT {
-      ${sparqlEscapeUri(job)} prov:generated ${sparqlEscapeUri(result)} .
+      GRAPH ?g {
+        ${sparqlEscapeUri(job)} prov:generated ${sparqlEscapeUri(result)} .
+      }
   }
   WHERE {
-      ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
+      GRAPH ?g {
+          ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
+      }
   }`;
-  await update(queryString);
+  await updateSudo(queryString);
   return job;
 }
 
@@ -77,19 +79,58 @@ async function updateJobStatus (uri, status) {
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
 
   DELETE {
-      ${escapedUri} ext:status ?status ;
-          ${sparqlEscapeUri(timePred)} ?time .
-   }
+      GRAPH ?g {
+        ${escapedUri} ext:status ?status ;
+            ${sparqlEscapeUri(timePred)} ?time .
+      }
+  }
   INSERT {
-      ${escapedUri} ext:status ${sparqlEscapeUri(status)} ;
-          ${sparqlEscapeUri(timePred)} ${sparqlEscapeDateTime(time)} .
+      GRAPH ?g {
+          ${escapedUri} ext:status ${sparqlEscapeUri(status)} ;
+              ${sparqlEscapeUri(timePred)} ${sparqlEscapeDateTime(time)} .
+      }
   }
   WHERE {
-      ${escapedUri} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
-      OPTIONAL { ${escapedUri} ext:status ?status }
-      OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
+      GRAPH ?g {
+          ${escapedUri} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
+          OPTIONAL { ${escapedUri} ext:status ?status }
+          OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
+      }
   }`;
-  await update(queryString);
+  await updateSudo(queryString);
+}
+
+async function findJobTodo (job) {
+  const queryString = `
+  PREFIX cogs: <http://vocab.deri.ie/cogs#>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX dct: <http://purl.org/dc/terms/>
+  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+
+  SELECT (?job AS ?uri) (?uuid as ?id) ?status ?used WHERE {
+      GRAPH ?g {
+          ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
+              mu:uuid ?uuid ;
+              ext:status ?status .
+          OPTIONAL { ?job prov:used ?used . }
+          FILTER NOT EXISTS {
+              ?job ext:status ?status .
+              VALUES ?status {
+                  ${sparqlEscapeUri(SUCCESS)}
+                  ${sparqlEscapeUri(FAIL)}
+              }
+          }
+      }
+  }`;
+  const results = await querySudo(queryString);
+  const parsedResults = parseSparqlResults(results);
+  if (parsedResults.length > 0) {
+    return parsedResults[0];
+  } else {
+    return null;
+  }
 }
 
 async function findJobUsingCollection (collection) {
@@ -118,7 +159,7 @@ async function findJobUsingCollection (collection) {
       OPTIONAL { ?job prov:startedAtTime ?started }
       OPTIONAL { ?job prov:endedAtTime ?ended }
   }`;
-  const results = await query(queryString);
+  const results = await query(queryString); // NO SUDO!
   const parsedResults = parseSparqlResults(results);
   if (parsedResults.length > 0) {
     return parsedResults[0];
@@ -133,5 +174,6 @@ export {
   attachResultToJob,
   updateJobStatus,
   RUNNING, SUCCESS, FAIL,
-  findJobUsingCollection
+  findJobUsingCollection,
+  findJobTodo
 };

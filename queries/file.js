@@ -1,4 +1,5 @@
-import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateTime, query, update, uuid as generateUuid } from 'mu';
+import { updateSudo } from '@lblod/mu-auth-sudo';
+import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateTime, query, uuid as generateUuid } from 'mu';
 import { parseSparqlResults } from './util';
 import { RESOURCE_BASE } from '../config';
 
@@ -40,7 +41,7 @@ import { RESOURCE_BASE } from '../config';
 //     }
 // }
 //     `;
-//     const results = await query(q);
+//     const results = await query(q); // NO SUDO!
 //     files = files.concat(parseSparqlResults(results));
 //   }
 //   console.log(`Returning ${files.length} files`);
@@ -67,13 +68,13 @@ WHERE {
     ?virtualFile dbpedia:fileExtension ?extension .
 }
     `;
-    const results = await query(q);
+    const results = await query(q); // NO SUDO!
     files = files.concat(parseSparqlResults(results));
   }
   return files;
 };
 
-const createFile = async function (file, physicalUri) {
+const createFile = async function (file, physicalUri, graph) {
   const uri = RESOURCE_BASE + `/files/${file.id}`;
   const physicalUuid = generateUuid();
   const q = `
@@ -84,25 +85,27 @@ const createFile = async function (file, physicalUri) {
   PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
 
   INSERT DATA {
-      ${sparqlEscapeUri(uri)} a nfo:FileDataObject ;
-            nfo:fileName ${sparqlEscapeString(file.name)} ;
-            mu:uuid ${sparqlEscapeString(file.id)} ;
-            dct:format ${sparqlEscapeString(file.format)} ;
-            nfo:fileSize ${sparqlEscapeInt(file.size)} ;
-            dbpedia:fileExtension ${sparqlEscapeString(file.extension)} ;
-            dct:created ${sparqlEscapeDateTime(file.created)} ;
-            dct:modified ${sparqlEscapeDateTime(file.created)} .
-      ${sparqlEscapeUri(physicalUri)} a nfo:FileDataObject ;
-            nie:dataSource ${sparqlEscapeUri(uri)} ;
-            nfo:fileName ${sparqlEscapeString(`${physicalUuid}.${file.extension}`)} ;
-            mu:uuid ${sparqlEscapeString(physicalUuid)} ;
-            dct:format ${sparqlEscapeString(file.format)} ;
-            nfo:fileSize ${sparqlEscapeInt(file.size)} ;
-            dbpedia:fileExtension ${sparqlEscapeString(file.extension)} ;
-            dct:created ${sparqlEscapeDateTime(file.created)} ;
-            dct:modified ${sparqlEscapeDateTime(file.created)} .
+      GRAPH ${sparqlEscapeUri(graph)} {
+          ${sparqlEscapeUri(uri)} a nfo:FileDataObject ;
+                nfo:fileName ${sparqlEscapeString(file.name)} ;
+                mu:uuid ${sparqlEscapeString(file.id)} ;
+                dct:format ${sparqlEscapeString(file.format)} ;
+                nfo:fileSize ${sparqlEscapeInt(file.size)} ;
+                dbpedia:fileExtension ${sparqlEscapeString(file.extension)} ;
+                dct:created ${sparqlEscapeDateTime(file.created)} ;
+                dct:modified ${sparqlEscapeDateTime(file.created)} .
+          ${sparqlEscapeUri(physicalUri)} a nfo:FileDataObject ;
+                nie:dataSource ${sparqlEscapeUri(uri)} ;
+                nfo:fileName ${sparqlEscapeString(`${physicalUuid}.${file.extension}`)} ;
+                mu:uuid ${sparqlEscapeString(physicalUuid)} ;
+                dct:format ${sparqlEscapeString(file.format)} ;
+                nfo:fileSize ${sparqlEscapeInt(file.size)} ;
+                dbpedia:fileExtension ${sparqlEscapeString(file.extension)} ;
+                dct:created ${sparqlEscapeDateTime(file.created)} ;
+                dct:modified ${sparqlEscapeDateTime(file.created)} .
+      }
   }`;
-  await update(q);
+  await updateSudo(q);
   file.uri = uri;
   return file;
 };
@@ -130,7 +133,7 @@ WHERE
 }
 LIMIT 1
   `;
-  const results = await query(q);
+  const results = await query(q); // NO SUDO
   const parsedResults = parseSparqlResults(results);
   if (parsedResults.length > 0) {
     return parsedResults[0];

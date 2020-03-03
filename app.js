@@ -1,11 +1,11 @@
 import bodyParser from 'body-parser';
 import { app, errorHandler } from 'mu';
-import sanitize from 'sanitize-filename';
 
 import { getFilesById, getFile } from './queries/file';
-import { muFileArchive } from './archive';
-import { createCollection, findCollectionByMembers } from './queries/collection';
-import { createJob, attachCollectionToJob, attachResultToJob, SUCCESS, FAIL, updateJobStatus, findJobUsingCollection } from './queries/job';
+import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
+import { runJob as jobRunner } from './lib/job';
+import { findCollectionByMembers } from './queries/collection';
+import { createJob, findJobUsingCollection } from './queries/job';
 import { filterDeltaForDeletedFiles, handleFileDeletions, filterDeltaForCreatedJobs } from './lib/delta';
 
 app.post('/files/archive', findJob, sendJob, runJob);
@@ -66,27 +66,7 @@ async function sendJob (req, res, next) {
 }
 
 async function runJob (req, res) {
-  try {
-    const fileCollection = await createCollection(req.authorizedFiles.map(f => f.uri));
-    await attachCollectionToJob(res.job.uri, fileCollection.uri);
-    const filesToArchive = req.authorizedFiles.map((f) => {
-      const fileWithRequestedName = req.files.filter((file) => file.id === f.id).filter((file) => {
-        return file.attributes && file.attributes.name;
-      })[0];
-      const name = fileWithRequestedName ? fileWithRequestedName.attributes.name : f.name;
-      return {
-        path: f.physicalUri.replace('share://', '/share/'),
-        name: sanitize(name, { replacement: '_' })
-      };
-    });
-    const archiveName = req.query.name || 'archive.zip';
-    const muFile = await muFileArchive(archiveName, filesToArchive);
-    await attachResultToJob(res.job.uri, muFile.uri);
-    updateJobStatus(res.job.uri, SUCCESS);
-  } catch (e) {
-    console.log(e);
-    updateJobStatus(res.job.uri, FAIL);
-  }
+  jobRunner(res.job.uri, bundlingJobRunner);
 }
 
 app.post('/delta', bodyParser.json(), async (req, res) => {
@@ -100,7 +80,9 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   const createdJobs = await filterDeltaForCreatedJobs(req.body);
   if (createdJobs.length > 0) {
     console.log(`Received ${createdJobs.length} new file bundling job(s) through delta's. Handling now.`);
-    // TODO
+    for (const jobUri of createdJobs) {
+      await jobRunner(jobUri, bundlingJobRunner);
+    }
   }
 });
 
