@@ -6,7 +6,10 @@ import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
 import { findCollectionByMembers, createCollection } from './queries/collection';
 import { createJob, findJobUsingCollection, attachCollectionToJob } from './queries/job';
-import { filterDeltaForDeletedFiles, handleFileDeletions, filterDeltaForCreatedJobs } from './lib/delta';
+import {
+  filterDeltaForDeletedFiles, handleFileDeletions,
+  filterDeltaForCreatedJobs, filterDeltaForStatusChangedJobs
+} from './lib/delta';
 
 app.post('/files/archive', findJob, sendJob, runJob);
 
@@ -80,9 +83,11 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   }
   // Handle running of inserted bundling jobs
   const createdJobs = await filterDeltaForCreatedJobs(req.body);
+  const changedStatusJobs = await filterDeltaForStatusChangedJobs(req.body);
+  const jobsToRun = [...new Set([...createdJobs, ...changedStatusJobs])]; // Uniquify array
   if (createdJobs.length > 0) {
-    console.log(`Received ${createdJobs.length} new file bundling job(s) through delta's. Handling now.`);
-    for (const jobUri of createdJobs) {
+    console.log(`Received ${createdJobs.length} pending file bundling job(s) through delta's. Handling now.`);
+    for (const jobUri of jobsToRun) {
       await jobRunner(jobUri, bundlingJobRunner);
     }
   }
