@@ -3,7 +3,7 @@ const parseSparqlResults = (data) => {
   if (!data) return;
   const vars = data.head.vars;
   return data.results.bindings.map((binding) => {
-    let obj = {};
+    const obj = {};
     vars.forEach((varKey) => {
       if (binding[varKey]) {
         obj[varKey] = binding[varKey].value;
@@ -13,4 +13,6 @@ const parseSparqlResults = (data) => {
   });
 };
 
-module.exports = { parseSparqlResults };
+export {
+  parseSparqlResults
+};
