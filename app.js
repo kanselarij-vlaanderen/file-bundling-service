@@ -1,13 +1,12 @@
 import bodyParser from 'body-parser';
 import { app, errorHandler } from 'mu';
 import sanitize from 'sanitize-filename';
-import fs from 'fs';
 
 import { getFilesById, getFile } from './queries/file';
 import { muFileArchive } from './archive';
 import { createCollection, findCollectionByMembers } from './queries/collection';
 import { createJob, attachCollectionToJob, attachResultToJob, SUCCESS, FAIL, updateJobStatus, findJobUsingCollection } from './queries/job';
-import { findJobsUsingFile, removeJobsUsingFile } from './queries/delta';
+import { filterDeltaForDeletedFiles, handleFileDeletions, filterDeltaForCreatedJobs } from './lib/delta';
 
 app.post('/files/archive', findJob, sendJob, runJob);
 
@@ -91,25 +90,17 @@ async function runJob (req, res) {
 }
 
 app.post('/delta', bodyParser.json(), async (req, res) => {
-  const deletionDeltas = req.body.map(d => d.deletes).reduce((ds, d) => Array.prototype.join.apply(ds, d));
-  console.log(`New delta's: ${deletionDeltas.length} deletes in total`);
-  const deletedFiles = deletionDeltas.filter(delta => {
-    return delta.predicate.value === 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type' &&
-      delta.object.value === 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject';
-  }).map(delta => delta.subject.value);
-  console.log('Of which are deleted files:', deletedFiles);
-  for (var deletedFile of deletedFiles) {
-    const jobs = await findJobsUsingFile(deletedFile);
-    console.log('Jobs to delete:', jobs);
-    for (const job of jobs) {
-      try {
-        fs.unlinkSync(job.physf.replace('share://', '/share/'));
-      } catch (e) {
-        console.log(`Failed to delete archive file <${job.physf}> from disk`);
-        continue;
-      }
-      await removeJobsUsingFile(deletedFile);
-    }
+  // Handle invalidation of archive file cache on file deletes
+  const deletedFiles = await filterDeltaForDeletedFiles(req.body);
+  if (deletedFiles.length > 0) {
+    console.log(`Received ${deletedFiles.length} file delete(s) through delta's. Handling now.`);
+    await handleFileDeletions(deletedFiles);
+  }
+  // Handle running of inserted bundling jobs
+  const createdJobs = await filterDeltaForCreatedJobs(req.body);
+  if (createdJobs.length > 0) {
+    console.log(`Received ${createdJobs.length} new file bundling job(s) through delta's. Handling now.`);
+    // TODO
   }
 });
 
