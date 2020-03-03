@@ -18,9 +18,9 @@ async function createCollection (members) {
 
   INSERT DATA {
       ${escapedUri} a prov:Collection ;
-          mu:uuid ${sparqlEscapeString(uuid)} ;
-          ext:sha256 ${sparqlEscapeString(sha)} ;
-          prov:hadMember ${members.map(sparqlEscapeUri).join(',\n              ')} .
+            mu:uuid ${sparqlEscapeString(uuid)} ;
+            ext:sha256 ${sparqlEscapeString(sha)} ;
+            prov:hadMember ${members.map(sparqlEscapeUri).join(',\n              ')} .
   }
   `;
   await update(queryString);
