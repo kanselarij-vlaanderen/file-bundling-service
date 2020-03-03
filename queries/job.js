@@ -1,6 +1,6 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
 // import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
-import { RESOURCE_BASE } from '../config';
+import { RESOURCE_BASE, RDF_JOB_TYPE } from '../config';
 import { parseSparqlResults } from './util';
 
 // const SCHEDULED = 'scheduled';
@@ -23,7 +23,7 @@ async function createJob () {
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
 
   INSERT DATA {
-      ${sparqlEscapeUri(job.uri)} a cogs:Job , ext:FileBundlingJob ;
+      ${sparqlEscapeUri(job.uri)} a cogs:Job , ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
           mu:uuid ${sparqlEscapeString(job.id)} ;
           ext:status ${sparqlEscapeString(job.status)} ;
           dct:created ${sparqlEscapeDateTime(job.created)} .
@@ -41,7 +41,7 @@ async function attachCollectionToJob (job, collection) {
       ${sparqlEscapeUri(job)} prov:used ${sparqlEscapeUri(collection)} .
   }
   WHERE {
-      ${sparqlEscapeUri(job)} a ext:FileBundlingJob .
+      ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
       ${sparqlEscapeUri(collection)} a prov:Collection .
   }`;
   await update(queryString);
@@ -57,7 +57,7 @@ async function attachResultToJob (job, result) {
       ${sparqlEscapeUri(job)} prov:generated ${sparqlEscapeUri(result)} .
   }
   WHERE {
-      ${sparqlEscapeUri(job)} a ext:FileBundlingJob .
+      ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
   }`;
   await update(queryString);
   return job;
@@ -85,7 +85,7 @@ async function updateJobStatus (uri, status) {
           ${sparqlEscapeUri(timePred)} ${sparqlEscapeDateTime(time)} .
   }
   WHERE {
-      ${escapedUri} a ext:FileBundlingJob .
+      ${escapedUri} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
       OPTIONAL { ${escapedUri} ext:status ?status }
       OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
   }`;
@@ -103,7 +103,7 @@ async function findJobUsingCollection (collection) {
 
   SELECT (?job AS ?uri) (?uuid as ?id) ?generated ?status ?created ?started ?ended WHERE {
       ${sparqlEscapeUri(collection)} a prov:Collection .
-      ?job a ext:FileBundlingJob ;
+      ?job a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
           mu:uuid ?uuid ;
           ext:status ?status ;
           prov:generated ?generated ;
