@@ -4,8 +4,8 @@ import { app, errorHandler } from 'mu';
 import { getFilesById, getFile } from './queries/file';
 import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
-import { findCollectionByMembers } from './queries/collection';
-import { createJob, findJobUsingCollection } from './queries/job';
+import { findCollectionByMembers, createCollection } from './queries/collection';
+import { createJob, findJobUsingCollection, attachCollectionToJob } from './queries/job';
 import { filterDeltaForDeletedFiles, handleFileDeletions, filterDeltaForCreatedJobs } from './lib/delta';
 
 app.post('/files/archive', findJob, sendJob, runJob);
@@ -23,6 +23,8 @@ async function findJob (req, res, next) {
     res.status(200);
   } else {
     job = await createJob();
+    const fileCollection = await createCollection(req.authorizedFiles.map(f => f.uri));
+    await attachCollectionToJob(job.uri, fileCollection.uri);
     res.status(201);
   }
   res.job = job;
