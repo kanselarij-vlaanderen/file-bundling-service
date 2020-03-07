@@ -56,6 +56,26 @@ Users of this service should have `:read`, `:write` and `:read-for-write` access
     ignoreFromSelf: false // Don't ignore from self in case of zip in zip
   }
 },
+{
+  match: {
+    predicate: {
+      type: 'uri',
+      value: 'http://mu.semte.ch/vocabularies/ext/status'
+    },
+    object: {
+      type: 'uri'
+    }
+  },
+  callback: {
+    url: 'http://file-bundling/delta',
+    method: 'POST'
+  },
+  options: {
+    resourceFormat: 'v0.0.1',
+    gracePeriod: 250,
+    ignoreFromSelf: true
+  }
+},
 ```
 
 #### Resources
