@@ -111,10 +111,8 @@ async function findJobTodo (job) {
           ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
               mu:uuid ?uuid .
           OPTIONAL { ${sparqlEscapeUri(job)} prov:used ?used . }
-          OPTIONAL {
-              ${sparqlEscapeUri(job)} ext:status ?status .
-              FILTER (?status NOT IN (${[RUNNING, SUCCESS, FAIL].map(sparqlEscapeUri).join(', ')}))
-          }
+          OPTIONAL { ${sparqlEscapeUri(job)} ext:status ?status . }
+          FILTER (?status NOT IN (${[RUNNING, SUCCESS, FAIL].map(sparqlEscapeUri).join(', ')}))
       }
   }`;
   const results = await querySudo(queryString);
