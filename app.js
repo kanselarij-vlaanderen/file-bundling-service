@@ -75,7 +75,8 @@ async function runJob (req, res) {
 }
 
 app.post('/delta', bodyParser.json(), async (req, res) => {
-  res.status(200).end();
+  console.log('Received raw delta body:', JSON.stringify(req.body));
+  res.status(202).end();
   // Handle invalidation of archive file cache on file deletes
   const deletedFiles = await filterDeltaForDeletedFiles(req.body);
   if (deletedFiles.length > 0) {
