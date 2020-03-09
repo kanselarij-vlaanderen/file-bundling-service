@@ -113,14 +113,7 @@ async function findJobTodo (job) {
           OPTIONAL { ${sparqlEscapeUri(job)} prov:used ?used . }
           OPTIONAL {
               ${sparqlEscapeUri(job)} ext:status ?status .
-              FILTER NOT EXISTS {
-                  ${sparqlEscapeUri(job)} ext:status ?status .
-                  VALUES ?status {
-                      ${sparqlEscapeUri(RUNNING)}
-                      ${sparqlEscapeUri(SUCCESS)}
-                      ${sparqlEscapeUri(FAIL)}
-                  }
-              }
+              FILTER (?status NOT IN (${[RUNNING, SUCCESS, FAIL].map(sparqlEscapeUri).join(', ')}))
           }
       }
   }`;
