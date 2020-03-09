@@ -75,7 +75,6 @@ async function runJob (req, res) {
 }
 
 app.post('/delta', bodyParser.json(), async (req, res) => {
-  console.log('Received raw delta body:', JSON.stringify(req.body));
   res.status(202).end();
   // Handle invalidation of archive file cache on file deletes
   const deletedFiles = await filterDeltaForDeletedFiles(req.body);
@@ -85,11 +84,8 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   }
   // Handle running of inserted bundling jobs
   const createdJobs = await filterDeltaForCreatedJobs(req.body);
-  console.log('created Jobs:', createdJobs);
   const changedStatusJobs = await filterDeltaForStatusChangedJobs(req.body);
-  console.log('Changed status jobs:', changedStatusJobs);
   const jobsToRun = [...new Set([...createdJobs, ...changedStatusJobs])]; // Uniquify array
-  console.log('All jobs:', jobsToRun);
   if (jobsToRun.length > 0) {
     console.log(`Received ${jobsToRun.length} pending file bundling job(s) through delta's. Handling now.`);
     for (const jobUri of jobsToRun) {
