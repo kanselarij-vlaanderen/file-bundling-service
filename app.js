@@ -87,8 +87,8 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
   const createdJobs = await filterDeltaForCreatedJobs(req.body);
   const changedStatusJobs = await filterDeltaForStatusChangedJobs(req.body);
   const jobsToRun = [...new Set([...createdJobs, ...changedStatusJobs])]; // Uniquify array
-  if (createdJobs.length > 0) {
-    console.log(`Received ${createdJobs.length} pending file bundling job(s) through delta's. Handling now.`);
+  if (jobsToRun.length > 0) {
+    console.log(`Received ${jobsToRun.length} pending file bundling job(s) through delta's. Handling now.`);
     for (const jobUri of jobsToRun) {
       await jobRunner(jobUri, bundlingJobRunner);
     }
