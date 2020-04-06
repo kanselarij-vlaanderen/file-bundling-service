@@ -11,6 +11,10 @@ import {
   filterDeltaForCreatedJobs, filterDeltaForStatusChangedJobs
 } from './lib/delta';
 
+/*
+ * TODO: Javascript template body parser only allows up to 100kb of payload size (https://github.com/expressjs/body-parser#limit).
+ * This is insufficiënt when sending archiving requests for many files
+ */
 app.post('/files/archive', findJob, sendJob, runJob);
 
 async function findJob (req, res, next) {
