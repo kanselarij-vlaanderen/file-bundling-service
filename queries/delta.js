@@ -69,7 +69,7 @@ async function findFinishedJobsWithoutPhysicalFile () {
   SELECT DISTINCT ?job ?collection WHERE {
       GRAPH ?g {
           ?job a ext:FileBundlingJob ;
-              ext:status ${sparqlEscapeUri(SUCCESS)} .
+              ext:status ${sparqlEscapeUri(SUCCESS)} ;
               prov:used ?collection .
           ?collection a prov:Collection .
           FILTER NOT EXISTS { ?job prov:generated ?file .}
@@ -106,7 +106,7 @@ async function removePhysicalFilesOfJob (jobUri) {
   WHERE {
     GRAPH ?g {
       ${sparqlEscapeUri(jobUri)} a ext:FileBundlingJob ;
-      prov:generated ?file .
+          prov:generated ?file .
       ?physf a nfo:FileDataObject ;
           nie:dataSource ?file ;
           ?physfP ?physfO .
