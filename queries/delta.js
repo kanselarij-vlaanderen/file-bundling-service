@@ -1,6 +1,7 @@
 import { sparqlEscapeUri } from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { parseSparqlResults } from './util';
+import { SUCCESS } from './job';
 
 const WHERE_TEMPLATE = `
 WHERE {
@@ -53,6 +54,25 @@ async function findJobsWithoutCollectionMembers () {
           ?physf a nfo:FileDataObject ;
               nie:dataSource ?file .
           FILTER NOT EXISTS { ?collection prov:hadMember ?o .}
+      }
+  }`
+
+  const result = await querySudo(queryString);
+  return parseSparqlResults(result);
+}
+
+async function findFinishedJobsWithoutPhysicalFile () {
+  const queryString = `
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
+  SELECT DISTINCT ?job ?collection WHERE {
+      GRAPH ?g {
+          ?job a ext:FileBundlingJob ;
+              ext:status ${sparqlEscapeUri(SUCCESS)} .
+              prov:used ?collection .
+          ?collection a prov:Collection .
+          FILTER NOT EXISTS { ?job prov:generated ?file .}
       }
   }`
 
@@ -160,5 +180,6 @@ async function removeJob (jobUri) {
 export {
   findJobsUsingFile,
   findJobsWithoutCollectionMembers,
+  findFinishedJobsWithoutPhysicalFile,
   removeJobAndCollection
 };
