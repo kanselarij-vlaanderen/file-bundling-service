@@ -160,6 +160,27 @@ async function findJobUsingCollection (collection) {
   }
 }
 
+async function findAllJobArchives () {
+  const queryString = `
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+  PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
+  SELECT DISTINCT ?job ?physf WHERE {
+    GRAPH ?g {
+      ?job a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
+          prov:generated ?file ;
+          ext:status ${sparqlEscapeUri(SUCCESS)} .
+      ?physf a nfo:FileDataObject ;
+          nie:dataSource ?file .
+    }
+  }`;
+  const results = await querySudo(queryString);
+  console.log('results', results)
+  return parseSparqlResults(results);
+}
+
 export {
   createJob,
   attachCollectionToJob,
@@ -167,5 +188,6 @@ export {
   updateJobStatus,
   RUNNING, SUCCESS, FAIL,
   findJobUsingCollection,
-  findJobTodo
+  findJobTodo,
+  findAllJobArchives
 };

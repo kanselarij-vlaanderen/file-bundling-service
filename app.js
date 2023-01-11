@@ -5,11 +5,13 @@ import { getFilesById, getFile } from './queries/file';
 import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
 import { findCollectionByMembers, createCollection } from './queries/collection';
-import { createJob, findJobUsingCollection, attachCollectionToJob } from './queries/job';
+import { createJob, findJobUsingCollection, attachCollectionToJob, findAllJobArchives } from './queries/job';
+import { removeJobAndCollection } from "./queries/delta";
 import {
   filterDeltaForDeletedFiles, handleFileDeletions,
   filterDeltaForCreatedJobs, filterDeltaForStatusChangedJobs
 } from './lib/delta';
+import { verifyArchive } from './lib/archive';
 
 /*
  * TODO: Javascript template body parser only allows up to 100kb of payload size (https://github.com/expressjs/body-parser#limit).
@@ -97,5 +99,28 @@ app.post('/delta', bodyParser.json(), async (req, res) => {
     }
   }
 });
+
+// on startup
+verifyArchiveFiles();
+
+async function verifyArchiveFiles() {
+  console.log(`Verifying all current archives from finished jobs`);
+  const jobs = await findAllJobArchives();
+  console.log(`${jobs.length} archives to verify`);
+  for (const job of jobs) {
+    try {
+      const isFileOnDisk = await verifyArchive(job.physf.replace('share://', '/share/'));
+      if (isFileOnDisk) {
+        console.log(`Archive for job <${job.job}> found on disk`);
+      } else {
+        console.log(`Archive for job <${job.job}> not found on disk, removing metadata`);
+        await removeJobAndCollection(job);
+      }
+    } catch (e) {
+      console.log(`Failed to verify archive for job <${job.job}>`);
+    }
+  }
+  console.log(`Verifying current archives finished`);
+}
 
 app.use(errorHandler);
