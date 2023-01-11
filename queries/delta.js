@@ -61,25 +61,6 @@ async function findJobsWithoutCollectionMembers () {
   return parseSparqlResults(result);
 }
 
-async function findFinishedJobsWithoutPhysicalFile () {
-  const queryString = `
-  PREFIX prov: <http://www.w3.org/ns/prov#>
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-
-  SELECT DISTINCT ?job ?collection WHERE {
-      GRAPH ?g {
-          ?job a ext:FileBundlingJob ;
-              ext:status ${sparqlEscapeUri(SUCCESS)} ;
-              prov:used ?collection .
-          ?collection a prov:Collection .
-          FILTER NOT EXISTS { ?job prov:generated ?file .}
-      }
-  }`
-
-  const result = await querySudo(queryString);
-  return parseSparqlResults(result);
-}
-
 async function removeJobAndCollection (jobObject) {
   const job = jobObject.job;
   if (job) {
@@ -180,6 +161,5 @@ async function removeJob (jobUri) {
 export {
   findJobsUsingFile,
   findJobsWithoutCollectionMembers,
-  findFinishedJobsWithoutPhysicalFile,
   removeJobAndCollection
 };
