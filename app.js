@@ -106,18 +106,20 @@ verifyArchiveFiles();
 async function verifyArchiveFiles() {
   console.log(`Verifying all current archives from finished jobs`);
   const jobs = await findAllJobArchives();
-  console.log(`${jobs.length} archives to verify`);
-  for (const job of jobs) {
-    try {
-      const isFileOnDisk = await verifyArchive(job.physf.replace('share://', '/share/'));
-      if (isFileOnDisk) {
-        console.log(`Archive for job <${job.job}> found on disk`);
-      } else {
-        console.log(`Archive for job <${job.job}> not found on disk, removing metadata`);
-        await removeJobAndCollection(job);
+  if (jobs) {
+    console.log(`${jobs.length} archives to verify`);
+    for (const job of jobs) {
+      try {
+        const isFileOnDisk = await verifyArchive(job.physf.replace('share://', '/share/'));
+        if (isFileOnDisk) {
+          console.log(`Archive for job <${job.job}> found on disk`);
+        } else {
+          console.log(`Archive for job <${job.job}> not found on disk, removing metadata`);
+          await removeJobAndCollection(job);
+        }
+      } catch (e) {
+        console.log(`Failed to verify archive for job <${job.job}>`);
       }
-    } catch (e) {
-      console.log(`Failed to verify archive for job <${job.job}>`);
     }
   }
   console.log(`Verifying current archives finished`);
