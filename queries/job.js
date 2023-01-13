@@ -177,7 +177,6 @@ async function findAllJobArchives () {
     }
   }`;
   const results = await querySudo(queryString);
-  console.log('results', results)
   return parseSparqlResults(results);
 }
 
