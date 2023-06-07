@@ -1,23 +1,18 @@
 import { sparqlEscapeUri } from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { parseSparqlResults } from './util';
-import { SUCCESS } from './job';
 
 const WHERE_TEMPLATE = `
 WHERE {
     GRAPH ?g {
         ?job a ext:FileBundlingJob ;
-            ?jobP ?jobO .
-        ?job prov:used ?collection .
+            prov:used ?collection .
         ?collection a prov:Collection ;
-            prov:hadMember #FILE_URI_PLACEHOLDER# ;
-            ?collectionP ?collectionO .
+            prov:hadMember #FILE_URI_PLACEHOLDER# .
         ?job prov:generated ?file .
-        ?file a nfo:FileDataObject ;
-            ?virtfP ?virtfO .
+        ?file a nfo:FileDataObject .
         ?physf a nfo:FileDataObject ;
-            nie:dataSource ?file ;
-            ?physfP ?physfO .
+            nie:dataSource ?file .
     }
 }`;
 
