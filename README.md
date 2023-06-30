@@ -12,6 +12,7 @@ file-bundling:
   image: kanselarij/file-bundling-service
   volumes:
     - ./data/files:/share
+    - ./data/generated-archives:/archive
 ```
 
 #### Dispatcher

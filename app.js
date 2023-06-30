@@ -110,7 +110,7 @@ async function verifyArchiveFiles() {
     console.log(`${jobs.length} archives to verify`);
     for (const job of jobs) {
       try {
-        const isFileOnDisk = await verifyArchive(job.physf.replace('share://', '/share/'));
+        const isFileOnDisk = await verifyArchive(job.physf.replace('archive://', '/archive/'));
         if (isFileOnDisk) {
           console.log(`Archive for job <${job.job}> found on disk`);
         } else {
