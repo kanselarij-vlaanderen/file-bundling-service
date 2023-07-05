@@ -7,9 +7,14 @@ As archiving large amounts of files typically is a (timely) expensive operation,
 
 #### docker-compose
 
+Optional:
+If the created file storage location needs to be in a subfolder of the share folder you need to add `MU_APPLICATION_FILE_STORAGE_PATH` to the config.
+
 ```yml
 file-bundling:
   image: kanselarij/file-bundling-service
+  environment:
+    MU_APPLICATION_FILE_STORAGE_PATH: "path-to-file/"
   volumes:
     - ./data/files:/share
 ```
