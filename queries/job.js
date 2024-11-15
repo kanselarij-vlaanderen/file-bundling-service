@@ -1,7 +1,7 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { RESOURCE_BASE, RDF_JOB_TYPE } from '../config';
-import { parseSparqlResults } from './util';
+import { parseSparqlResults, sparqlQueryWithRetry } from './util';
 
 // const SCHEDULED = 'scheduled';
 const RUNNING = 'http://vocab.deri.ie/cogs#Running';
@@ -176,7 +176,7 @@ async function findAllJobArchives () {
           nie:dataSource ?file .
     }
   }`;
-  const results = await querySudo(queryString);
+  const results = await sparqlQueryWithRetry(querySudo, queryString);
   return parseSparqlResults(results);
 }
 
