@@ -8,7 +8,9 @@ async function createCollection (members) {
   const uuid = generateUuid();
   const uri = RESOURCE_BASE + `/collections/${uuid}`;
   const escapedUri = sparqlEscapeUri(uri);
-  const sortedMembers = members.sort((a, b) => a.localeCompare(b));
+  const sortedMembers = members
+    .map(f => `uri:${f.uri}|name:${f.name}`)
+    .sort((a, b) => a.localeCompare(b));
   const hashFactory = crypto.createHash('sha256');
   const sha = hashFactory.update(sortedMembers.join('')).digest('hex');
   const queryString = `
@@ -35,17 +37,19 @@ async function findCollectionFileMembers (collection) {
   // Returns an array of URIs
   const q = `
 PREFIX prov: <http://www.w3.org/ns/prov#>
+PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
 PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
 PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
 
-SELECT DISTINCT ?graph (?file as ?uri) ?name ?physicalUri
+SELECT DISTINCT ?graph (?file as ?uri) ?id ?name ?physicalUri
 WHERE {
     GRAPH ?graph {
         ${sparqlEscapeUri(collection)} a prov:Collection ;
             prov:hadMember ?file ;
             ext:sha256 ?sha .
         ?file a nfo:FileDataObject ;
+            mu:uuid ?id ;
             nfo:fileName ?name .
         ?physicalUri a nfo:FileDataObject ;
             nie:dataSource ?file .

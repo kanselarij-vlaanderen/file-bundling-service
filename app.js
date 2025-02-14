@@ -22,7 +22,7 @@ app.post('/files/archive', findJob, sendJob, runJob);
 async function findJob (req, res, next) {
   req.files = req.body.data.filter(f => f.type === 'files');
   req.authorizedFiles = await getFilesById(req.files.map(f => f.id));
-  const collection = await findCollectionByMembers(req.authorizedFiles.map(f => f.uri));
+  const collection = await findCollectionByMembers(req.authorizedFiles.map(f => `uri:${f.uri}|name:${f.name}`));
   let job;
   if (collection) {
     job = await findJobUsingCollection(collection.uri);
@@ -32,7 +32,7 @@ async function findJob (req, res, next) {
     res.status(200);
   } else {
     job = await createJob();
-    const fileCollection = await createCollection(req.authorizedFiles.map(f => f.uri));
+    const fileCollection = await createCollection(req.authorizedFiles);
     await attachCollectionToJob(job.uri, fileCollection.uri);
     res.status(201);
   }
