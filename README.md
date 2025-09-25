@@ -65,7 +65,7 @@ Users of this service should have `:read`, `:write` and `:read-for-write` access
   match: {
     predicate: {
       type: 'uri',
-      value: 'http://mu.semte.ch/vocabularies/ext/status'
+      value: 'http://www.w3.org/ns/adms#status'
     },
     object: {
       type: 'uri'
@@ -90,24 +90,40 @@ Users of this service should have `:read`, `:write` and `:read-for-write` access
 (define-resource file-bundling-job ()
   :class (s-prefix "ext:FileBundlingJob") ; "cogs:Job"
   :properties `((:created       :datetime  ,(s-prefix "dct:created"))
-                (:status        :uri       ,(s-prefix "ext:status"))
+                (:status        :uri       ,(s-prefix "adms:status"))
                 (:time-started  :datetime  ,(s-prefix "prov:startedAtTime"))
                 (:time-ended    :datetime  ,(s-prefix "prov:endedAtTime"))
+                (:message       :string    ,(s-prefix "schema:error"))
   )
   :has-one `((file              :via     ,(s-prefix "prov:generated")
                                 :as "generated"))
-  ; :resource-base (s-url "http://example.com/id/file-bundling-jobs/")
+  ; :resource-base (s-url "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/")
   :features '(include-uri)
   :on-path "file-bundling-jobs"
 )
+
+;; Not strictly necessary if not used
+(define-resource collection ()
+  :class (s-prefix "prov:Collection")
+  :properties `((:sha256        :string  ,(s-prefix "ext:sha256")))
+  :has-one `((file-bundling-job :via     ,(s-prefix "prov:used")
+                                :inverse t
+                                :as "file-bundling-job"))
+  :has-many `((file             :via     ,(s-prefix "prov:hadMember")
+                                :as "members"))
+  ; :resource-base (s-url "http://mu.semte.ch/services/file-bundling-service/collections/")
+  :features '(include-uri)
+  :on-path "collections")
 ```
 
 `repository.lisp`:
 ```lisp
 (add-prefix "ext" "http://mu.semte.ch/vocabularies/ext/")
+(add-prefix "adms" "http://www.w3.org/ns/adms#")
 (add-prefix "dct" "http://purl.org/dc/terms/")
 (add-prefix "prov" "http://www.w3.org/ns/prov#")
 (add-prefix "cogs" "http://vocab.deri.ie/cogs#")
+(add-prefix "schema" "http://schema.org/")
 ```
 
 `dispatcher.ex`:
@@ -154,8 +170,11 @@ On successful creation of a job.
     "id": "5f680870-5984-11ea-98be-11315490e00b",
     "attributes": {
       "uri": "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/5f680870-5984-11ea-98be-11315490e00b",
-      "status": "http://vocab.deri.ie/cogs#Running",
-      "created": "2020-02-27T17:12:45.943Z"
+      "status": "http://redpencil.data.gift/id/concept/JobStatus/busy",
+      "created": "2020-02-27T17:12:45.943Z",
+      "time-started": "2020-02-27T17:13:45.943Z",
+      "time-ended": "2020-02-27T17:15:45.943Z",
+      "message": "The error message we got if the job failed"
     }
   }
 }
@@ -171,7 +190,7 @@ When an archive for the exact set of requested files *already is available*, the
     "id": "5f680870-5984-11ea-98be-11315490e00b",
     "attributes": {
       "uri": "http://mu.semte.ch/services/file-bundling-service/file-bundling-jobs/5f680870-5984-11ea-98be-11315490e00b",
-      "status": "http://vocab.deri.ie/cogs#Success",
+      "status": "http://redpencil.data.gift/id/concept/JobStatus/success",
       "created": "2020-02-27T17:12:45.943Z"
     },
     "relationships": {
