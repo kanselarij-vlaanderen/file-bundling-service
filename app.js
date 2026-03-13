@@ -1,6 +1,7 @@
 import bodyParser from 'body-parser';
 import { app, errorHandler } from 'mu';
 
+import { ALLOWED_DELTA_SIZE } from './config';
 import { getFilesById, getFile } from './queries/file';
 import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
@@ -80,7 +81,7 @@ async function runJob (req, res) {
   jobRunner(res.job.uri, bundlingJobRunner);
 }
 
-app.post('/delta', bodyParser.json(), async (req, res) => {
+app.post('/delta', bodyParser.json({ limit: ALLOWED_DELTA_SIZE }), async (req, res) => {
   res.status(202).end();
   // Handle invalidation of archive file cache on file deletes
   const deletedFiles = await filterDeltaForDeletedFiles(req.body);
