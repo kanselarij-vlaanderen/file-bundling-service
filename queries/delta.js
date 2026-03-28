@@ -1,11 +1,12 @@
 import { sparqlEscapeUri } from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { parseSparqlResults } from './util';
+import { JOB } from '../config';
 
 const WHERE_TEMPLATE = `
 WHERE {
     GRAPH ?g {
-        ?job a ext:FileBundlingJob ;
+        ?job a ${sparqlEscapeUri(JOB.RDF_TYPE)} ;
             prov:used ?collection .
         ?collection a prov:Collection ;
             prov:hadMember #FILE_URI_PLACEHOLDER# .
@@ -41,7 +42,7 @@ async function findJobsWithoutCollectionMembers () {
 
   SELECT DISTINCT ?job ?collection ?file ?physf WHERE {
       GRAPH ?g {
-          ?job a ext:FileBundlingJob ;
+          ?job a ${sparqlEscapeUri(JOB.RDF_TYPE)} ;
               prov:used ?collection .
           ?collection a prov:Collection .
           ?job prov:generated ?file .
@@ -81,7 +82,7 @@ async function removePhysicalFilesOfJob (jobUri) {
   }
   WHERE {
     GRAPH ?g {
-      ${sparqlEscapeUri(jobUri)} a ext:FileBundlingJob ;
+      ${sparqlEscapeUri(jobUri)} a ${sparqlEscapeUri(JOB.RDF_TYPE)} ;
           prov:generated ?file .
       ?physf a nfo:FileDataObject ;
           nie:dataSource ?file ;
@@ -105,7 +106,7 @@ async function removeVirtualFilesOfJob (jobUri) {
   }
   WHERE {
     GRAPH ?g {
-      ${sparqlEscapeUri(jobUri)} a ext:FileBundlingJob ;
+      ${sparqlEscapeUri(jobUri)} a ${sparqlEscapeUri(JOB.RDF_TYPE)} ;
           prov:generated ?file .
       ?file a nfo:FileDataObject ;
           ?virtfP ?virtfO .
@@ -126,7 +127,7 @@ async function removeCollectionsOfJob (jobUri) {
   }
   WHERE {
     GRAPH ?g {
-      ${sparqlEscapeUri(jobUri)} a ext:FileBundlingJob ;
+      ${sparqlEscapeUri(jobUri)} a ${sparqlEscapeUri(JOB.RDF_TYPE)} ;
             prov:used ?collection .
         ?collection a prov:Collection ;
             ?collectionP ?collectionO .
@@ -146,7 +147,7 @@ async function removeJob (jobUri) {
   }
   WHERE {
       GRAPH ?g {
-          ${sparqlEscapeUri(jobUri)} a ext:FileBundlingJob ;
+          ${sparqlEscapeUri(jobUri)} a ${sparqlEscapeUri(JOB.RDF_TYPE)} ;
               ?jobP ?jobO .
       }
   }`

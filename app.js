@@ -6,18 +6,21 @@ import { getFilesById, getFile } from './queries/file';
 import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
 import { findCollectionByMembers, createCollection } from './queries/collection';
-import { createJob, findJobUsingCollection, attachCollectionToJob, findAllJobArchives } from './queries/job';
+import { createJob, findJobUsingCollection, attachCollectionToJob, findAllJobArchives, updateJobStatus } from './queries/job';
 import { removeJobAndCollection } from "./queries/delta";
 import {
   filterDeltaForDeletedFiles, handleFileDeletions,
   filterDeltaForCreatedJobs, filterDeltaForStatusChangedJobs
 } from './lib/delta';
 import { verifyArchive } from './lib/archive';
+import { JOB } from './config';
 
 /*
  * TODO: Javascript template body parser only allows up to 100kb of payload size (https://github.com/expressjs/body-parser#limit).
  * This is insufficiënt when sending archiving requests for many files
  */
+// TODO This entire API endpoint is not actively used, job-creation does this for each archive now. remove for clarity?
+// TODO we could then also consolidate both services into 1?
 app.post('/files/archive', findJob, sendJob, runJob);
 
 async function findJob (req, res, next) {
@@ -29,12 +32,16 @@ async function findJob (req, res, next) {
     job = await findJobUsingCollection(collection.uri);
   }
   if (job) {
+    // ! TODO see above, this endpoint is unused and therefore untested
+    // If this is kept, what happens when a job is created but the creation of the collection fails?
     job.generated = await getFile(job.generated);
     res.status(200);
   } else {
     job = await createJob();
     const fileCollection = await createCollection(req.authorizedFiles);
     await attachCollectionToJob(job.uri, fileCollection.uri);
+    await updateJobStatus(job.uri, JOB.STATUSES.SCHEDULED);
+    job = await findJobUsingCollection(collection.uri); // new metadata after setting status
     res.status(201);
   }
   res.job = job;
@@ -44,12 +51,15 @@ async function findJob (req, res, next) {
 async function sendJob (req, res, next) {
   const payload = {};
   payload.data = {
-    type: 'file-bundling-jobs',
+    type: JOB.JSONAPI_JOB_TYPE,
     id: res.job.id,
     attributes: {
       uri: res.job.uri,
       status: res.job.status,
-      created: res.job.created
+      created: res.job.created,
+      "time-started": res.job.started,
+      "time-ended": res.job.ended,
+      message: res.job.message
     }
   };
   if (res.statusCode === 200) {

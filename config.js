@@ -8,11 +8,20 @@ if (!STORAGE_PATH.endsWith('/')) {
   STORAGE_PATH = `${STORAGE_PATH}/`;
 }
 
-const RDF_JOB_TYPE = 'http://mu.semte.ch/vocabularies/ext/FileBundlingJob';
+const JOB = {
+  STATUSES: {
+    SCHEDULED: 'http://redpencil.data.gift/id/concept/JobStatus/scheduled',
+    BUSY: 'http://redpencil.data.gift/id/concept/JobStatus/busy',
+    SUCCESS: 'http://redpencil.data.gift/id/concept/JobStatus/success',
+    FAILED: 'http://redpencil.data.gift/id/concept/JobStatus/failed',
+  },
+  RDF_TYPE: 'http://mu.semte.ch/vocabularies/ext/FileBundlingJob',
+  JSONAPI_JOB_TYPE: 'file-bundling-jobs',
+};
 
 module.exports = {
   ALLOWED_DELTA_SIZE,
   RESOURCE_BASE,
   STORAGE_PATH,
-  RDF_JOB_TYPE
+  JOB
 };
