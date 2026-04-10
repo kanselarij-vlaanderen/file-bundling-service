@@ -1,18 +1,19 @@
 import bodyParser from 'body-parser';
 import { app, errorHandler } from 'mu';
 
-import { ALLOWED_DELTA_SIZE } from './config';
+import { ALLOWED_DELTA_SIZE, ROLES } from './config';
 import { getFilesById, getFile } from './queries/file';
 import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
 import { findCollectionByMembers, createCollection } from './queries/collection';
-import { createJob, findJobUsingCollection, attachCollectionToJob, findAllJobArchives } from './queries/job';
+import { createJob, findJobUsingCollection, attachCollectionToJob, findAllJobArchives, findUnfinishedJobs } from './queries/job';
 import { removeJobAndCollection } from "./queries/delta";
 import {
   filterDeltaForDeletedFiles, handleFileDeletions,
   filterDeltaForCreatedJobs, filterDeltaForStatusChangedJobs
 } from './lib/delta';
 import { verifyArchive } from './lib/archive';
+import { isLoggedIn, sessionHasRole } from './lib/session';
 
 /*
  * TODO: Javascript template body parser only allows up to 100kb of payload size (https://github.com/expressjs/body-parser#limit).
@@ -80,6 +81,34 @@ async function sendJob (req, res, next) {
 async function runJob (req, res) {
   jobRunner(res.job.uri, bundlingJobRunner);
 }
+
+app.post('/restart-unfinished-tasks', async (req, res, next) => {
+  try {
+    const sessionUri = req.headers['mu-session-id'];
+    if (!(await isLoggedIn(sessionUri))) {
+      return next({ message: 'Unauthorized access to this endpoint is not permitted', status: 401 });
+    }
+    const hasCorrectRole = await sessionHasRole(sessionUri, [ROLES.ADMIN]);
+    if (!hasCorrectRole) {
+      return next({ message: 'Unauthorized access to this endpoint is not permitted', status: 403 });
+    }
+    const unfinishedJobs = await findUnfinishedJobs();
+    if (unfinishedJobs.length === 0) {
+      console.log('No unfinished file bundling jobs found.');
+      return res.status(200).send({ message: 'No unfinished jobs found.' });
+    }
+    console.log(`Found ${unfinishedJobs.length} unfinished file bundling job(s). Restarting now.`);
+    for (const job of unfinishedJobs) {
+      await jobRunner(job.job, bundlingJobRunner);
+    }
+    return res.status(200).send({ message: `Restarted ${unfinishedJobs.length} unfinished job(s).` });
+  } catch (err) {
+    console.trace(err);
+    const error = new Error(err.message || 'Something went wrong while restarting unfinished tasks.');
+    error.status = 500;
+    return next(error);
+  }
+});
 
 app.post('/delta', bodyParser.json({ limit: ALLOWED_DELTA_SIZE }), async (req, res) => {
   res.status(202).end();
