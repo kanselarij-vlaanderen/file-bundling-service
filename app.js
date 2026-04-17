@@ -82,6 +82,13 @@ async function runJob (req, res) {
   jobRunner(res.job.uri, bundlingJobRunner);
 }
 
+/*
+Debug endpoint that restarts all unstarted jobs.
+Call from a logged in session in the browser console using:
+fetch('/file-bundling/restart-unfinished-tasks', {
+     method: 'POST'
+   })
+*/
 app.post('/restart-unfinished-tasks', async (req, res, next) => {
   try {
     const sessionUri = req.headers['mu-session-id'];
@@ -98,8 +105,10 @@ app.post('/restart-unfinished-tasks', async (req, res, next) => {
       return res.status(200).send({ message: 'No unfinished jobs found.' });
     }
     console.log(`Found ${unfinishedJobs.length} unfinished file bundling job(s). Restarting now.`);
-    for (const job of unfinishedJobs) {
+    for (let i = 0; i < unfinishedJobs.length; i++) {
+      const job = unfinishedJobs[i];
       await jobRunner(job.job, bundlingJobRunner);
+      console.log(`Restarted file bundling job ${i+1} of ${unfinishedJobs.length}`);
     }
     return res.status(200).send({ message: `Restarted ${unfinishedJobs.length} unfinished job(s).` });
   } catch (err) {
