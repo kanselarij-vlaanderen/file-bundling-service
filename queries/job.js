@@ -180,6 +180,24 @@ async function findAllJobArchives () {
   return parseSparqlResults(results);
 }
 
+async function findUnfinishedJobs () {
+  const queryString = `
+  PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+
+  SELECT ?job ?uuid ?used WHERE {
+      GRAPH ?g {
+          ?job a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
+              mu:uuid ?uuid .
+          OPTIONAL { ?job prov:used ?used . }
+          FILTER NOT EXISTS { ?job ext:status ?status . }
+      }
+  }`;
+  const results = await querySudo(queryString);
+  return parseSparqlResults(results);
+}
+
 export {
   createJob,
   attachCollectionToJob,
@@ -188,5 +206,6 @@ export {
   RUNNING, SUCCESS, FAIL,
   findJobUsingCollection,
   findJobTodo,
-  findAllJobArchives
+  findAllJobArchives,
+  findUnfinishedJobs
 };
