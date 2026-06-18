@@ -3,6 +3,12 @@ A service for creating (zip) archives from [mu-files](https://github.com/mu-semt
 
 As archiving large amounts of files typically is a (timely) expensive operation, a job-like approach is used to create these archives. See [*The job datamodel*](#The-job-data-model) below for more info.
 
+Besides the generic `/files/archive` endpoint, this service also provides Kaleidos-specific endpoints to bundle all documents related to an agenda, agendaitem, case or subcase (formerly provided by the separate [file-bundling-job-creation-service](https://github.com/kanselarij-vlaanderen/file-bundling-job-creation-service), which has been merged into this service).
+
+*Why do the Kaleidos-specific endpoints exist next to the generic `files/archive`-endpoint?*
+Some of Kaleidos' agendas consist of a large amount of documents (> 1K). For the generic endpoint, the request has to carry all file id's and the service will first verify if there doesn't yet exist a job that produced the exact archive we want. For this many files, this process takes a while and as a result, the HTTP request can time out.
+The Kaleidos-specific endpoints gather the files server-side based on the Kaleidos data-model (including confidentiality filtering and document-name synchronization) and run the created bundling job in the background.
+
 ## Configuration snippets
 
 #### docker-compose
@@ -24,6 +30,25 @@ file-bundling:
 ```elixir
 post "/files/archive/*path", @any do
   Proxy.forward conn, path, "http://file-bundling-service/files/archive/"
+end
+```
+
+For the Kaleidos-specific endpoints:
+```elixir
+post "/agendas/:id/agendaitems/pieces/files/archive", @json_service do
+  Proxy.forward conn, [], "http://file-bundling/agendas/" <> id <> "/agendaitems/documents/files/archive"
+end
+
+post "/agendaitems/:id/pieces/files/archive", @json_service do
+  Proxy.forward conn, [], "http://file-bundling/agendaitems/" <> id <> "/documents/files/archive"
+end
+
+post "/cases/:id/pieces/files/archive", @json_service do
+  Proxy.forward conn, [], "http://file-bundling/cases/" <> id <> "/documents/files/archive"
+end
+
+post "/subcases/:id/pieces/files/archive", @json_service do
+  Proxy.forward conn, [], "http://file-bundling/subcases/" <> id <> "/documents/files/archive"
 end
 ```
 
@@ -199,6 +224,27 @@ When an archive for the exact set of requested files *already is available*, the
   ]
 }
 ```
+#### POST /agendas/:agenda_id/agendaitems/documents/files/archive
+Request the creation of an archive of all files related to agenda `:agenda_id`.
+
+Query parameters:
+- `mandateeIds`: comma-separated string of mandatee id's. When provided, all documents linked to an agendaitem which is linked to one of the listed mandatees will be bundled, as well as all documents linked to an agendaitem with no linked mandatees. When not provided, all documents of the agenda will be bundled.
+- `pdfOnly` (`true`/`false`): only bundle PDF files.
+- `decisions` (`true`/`false`): bundle the decision documents instead of the agendaitem documents.
+- `newDocumentsOnly` (`true`/`false`): only bundle documents that were added on this agenda version.
+
+#### POST /agendaitems/:agendaitem_id/documents/files/archive
+#### POST /cases/:case_id/documents/files/archive
+#### POST /subcases/:subcase_id/documents/files/archive
+Request the creation of an archive of all files related to a single agendaitem, case or subcase. The `pdfOnly` query parameter is supported.
+
+##### Response (all Kaleidos-specific endpoints)
+###### 201 Created
+On successful creation of a job. Response payload similar to `POST /files/archive`. The job is run in the background; poll the job (e.g. via `/file-bundling-jobs/:id`) for its status and generated file.
+
+###### 200 OK
+When serving an already-existing job for the exact same set of files. Response payload similar to above.
+
 ## The job data-model
 
 For modeling the jobs that create the archive files, this service makes use of the [COGS vocabulary](http://vocab.deri.ie/cogs#Job), which in its turn is based on the [PROV-O vocabulary](https://www.w3.org/TR/2013/REC-prov-o-20130430/#prov-o-at-a-glance)

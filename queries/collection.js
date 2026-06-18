@@ -1,36 +1,24 @@
-import crypto from 'crypto';
-import { query, update, sparqlEscapeString, sparqlEscapeUri, uuid as generateUuid } from 'mu';
+import { query, update, sparqlEscapeString, sparqlEscapeUri } from 'mu';
 import { querySudo } from '@lblod/mu-auth-sudo';
-import { RESOURCE_BASE } from '../config';
 import { parseSparqlResults } from './util';
+import { createCollection as createCollectionObject, computeMembersHash } from '../lib/collection';
 
 async function createCollection (members) {
-  const uuid = generateUuid();
-  const uri = RESOURCE_BASE + `/collections/${uuid}`;
-  const escapedUri = sparqlEscapeUri(uri);
-  const sortedMembers = members
-    .map(f => `uri:${f.uri}|name:${f.name}`)
-    .sort((a, b) => a.localeCompare(b));
-  const hashFactory = crypto.createHash('sha256');
-  const sha = hashFactory.update(sortedMembers.join('')).digest('hex');
+  const collection = createCollectionObject(members);
   const queryString = `
   PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
 
   INSERT DATA {
-      ${escapedUri} a prov:Collection ;
-            mu:uuid ${sparqlEscapeString(uuid)} ;
-            ext:sha256 ${sparqlEscapeString(sha)} ;
-            prov:hadMember ${members.map(sparqlEscapeUri).join(',\n              ')} .
+      ${sparqlEscapeUri(collection.uri)} a prov:Collection ;
+            mu:uuid ${sparqlEscapeString(collection.id)} ;
+            ext:sha256 ${sparqlEscapeString(collection.sha)} ;
+            prov:hadMember ${collection.members.map(m => sparqlEscapeUri(m.uri)).join(',\n              ')} .
   }
   `;
   await update(queryString);
-  return {
-    uri,
-    id: uuid,
-    members
-  };
+  return collection;
 }
 
 async function findCollectionFileMembers (collection) {
@@ -67,9 +55,7 @@ async function findCollectionByMembers (members) {
    * Searches based on a hash of members instead of their literal triples,
    * as the latter causes computational heavy queries (inner joins) which the DB cannot handle
    */
-  const sortedMembers = members.sort((a, b) => a.localeCompare(b));
-  const hashFactory = crypto.createHash('sha256');
-  const sha = hashFactory.update(sortedMembers.join('')).digest('hex');
+  const sha = computeMembersHash(members);
   const q = `
 PREFIX prov: <http://www.w3.org/ns/prov#>
 PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -81,7 +67,6 @@ WHERE {
   `;
   const results = await query(q); // NO SUDO!
   const parsedResults = parseSparqlResults(results);
-  console.log('parsed results:', parsedResults);
   if (parsedResults.length > 0) {
     return parsedResults[0];
   } else {
