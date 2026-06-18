@@ -11,10 +11,7 @@ import {
   updateJobStatus, findAllJobArchives, findUnfinishedJobs, RUNNING
 } from './queries/job';
 import { removeJobAndCollection } from "./queries/delta";
-import {
-  filterDeltaForDeletedFiles, handleFileDeletions,
-  filterDeltaForCreatedJobs, filterDeltaForStatusChangedJobs
-} from './lib/delta';
+import { filterDeltaForDeletedFiles, handleFileDeletions } from './lib/delta';
 import { verifyArchive } from './lib/archive';
 import { isLoggedIn, sessionHasRole } from './lib/session';
 import {
@@ -244,6 +241,11 @@ app.post('/restart-unfinished-tasks', async (req, res, next) => {
   }
 });
 
+/*
+ * The Kaleidos-specific endpoints and the generic /files/archive endpoint now run their
+ * bundling jobs directly (see documentBundlingJob / runJob), and no other service enqueues
+ * jobs for us anymore, so this endpoint only handles cache invalidation on file deletes.
+ */
 app.post('/delta', bodyParser.json({ limit: ALLOWED_DELTA_SIZE }), async (req, res) => {
   res.status(202).end();
   // Handle invalidation of archive file cache on file deletes
@@ -251,16 +253,6 @@ app.post('/delta', bodyParser.json({ limit: ALLOWED_DELTA_SIZE }), async (req, r
   if (deletedFiles.length > 0) {
     console.log(`Received ${deletedFiles.length} file delete(s) through delta's. Handling now.`);
     await handleFileDeletions(deletedFiles);
-  }
-  // Handle running of inserted bundling jobs
-  const createdJobs = await filterDeltaForCreatedJobs(req.body);
-  const changedStatusJobs = await filterDeltaForStatusChangedJobs(req.body);
-  const jobsToRun = [...new Set([...createdJobs, ...changedStatusJobs])]; // Uniquify array
-  if (jobsToRun.length > 0) {
-    console.log(`Received ${jobsToRun.length} pending file bundling job(s) through delta's. Handling now.`);
-    for (const jobUri of jobsToRun) {
-      await jobRunner(jobUri, bundlingJobRunner);
-    }
   }
 });
 
