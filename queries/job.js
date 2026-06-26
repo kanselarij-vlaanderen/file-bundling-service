@@ -1,6 +1,7 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
 import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { RESOURCE_BASE, RDF_JOB_TYPE } from '../config';
+import { createCollection } from '../lib/collection';
 import { parseSparqlResults, sparqlQueryWithRetry } from './util';
 
 // const SCHEDULED = 'scheduled';
@@ -8,13 +9,16 @@ const RUNNING = 'http://vocab.deri.ie/cogs#Running';
 const SUCCESS = 'http://vocab.deri.ie/cogs#Success';
 const FAIL = 'http://vocab.deri.ie/cogs#Fail';
 
-async function createJob () {
+async function createJob (status) {
   const uuid = generateUuid();
   const job = {
     uri: RESOURCE_BASE + `/file-bundling-jobs/${uuid}`,
     id: uuid,
     created: new Date()
   };
+  if (status) {
+    job.status = status;
+  }
   const queryString = `
   PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
@@ -22,7 +26,8 @@ async function createJob () {
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
 
   INSERT DATA {
-      ${sparqlEscapeUri(job.uri)} a cogs:Job , ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
+      ${sparqlEscapeUri(job.uri)} a cogs:Job , ${sparqlEscapeUri(RDF_JOB_TYPE)} ;${job.status ? `
+          ext:status ${sparqlEscapeUri(job.status)} ;` : ''}
           mu:uuid ${sparqlEscapeString(job.id)} ;
           dct:created ${sparqlEscapeDateTime(job.created)} .
   }`;
@@ -46,6 +51,31 @@ async function attachCollectionToJob (job, collection) {
   return job;
 }
 
+async function insertAndAttachCollectionToJob (job, collectionMembers) {
+  const collection = createCollection(collectionMembers);
+  const queryString = `
+  PREFIX prov: <http://www.w3.org/ns/prov#>
+  PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+
+  INSERT {
+      GRAPH ?g {
+          ${sparqlEscapeUri(job.uri)} prov:used ${sparqlEscapeUri(collection.uri)} .
+          ${sparqlEscapeUri(collection.uri)} a prov:Collection ;
+                mu:uuid ${sparqlEscapeString(collection.id)} ;
+                ext:sha256 ${sparqlEscapeString(collection.sha)} ;
+                prov:hadMember ${collection.members.map(m => sparqlEscapeUri(m.uri)).join(',\n              ')} .
+      }
+  }
+  WHERE {
+      GRAPH ?g {
+          ${sparqlEscapeUri(job.uri)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
+      }
+  }`;
+  await updateSudo(queryString);
+  return job;
+}
+
 async function attachResultToJob (job, result) {
   const queryString = `
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
@@ -66,6 +96,7 @@ async function attachResultToJob (job, result) {
 }
 
 async function updateJobStatus (uri, status) {
+  // A falsy status unsets the job's current status (and leaves the started/ended timestamps untouched)
   const time = new Date();
   let timePred;
   if (status === SUCCESS || status === FAIL) { // final statusses
@@ -74,29 +105,37 @@ async function updateJobStatus (uri, status) {
     timePred = 'http://www.w3.org/ns/prov#startedAtTime';
   }
   const escapedUri = sparqlEscapeUri(uri);
-  const queryString = `
-  PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  PREFIX cogs: <http://vocab.deri.ie/cogs#>
+  let queryString = `
+PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+PREFIX cogs: <http://vocab.deri.ie/cogs#>
 
-  DELETE {
-      GRAPH ?g {
-        ${escapedUri} ext:status ?status ;
-            ${sparqlEscapeUri(timePred)} ?time .
-      }
+DELETE {
+    GRAPH ?g {
+      ${escapedUri} ext:status ?status .`;
+  if (status) {
+    queryString += `
+      ${escapedUri} ${sparqlEscapeUri(timePred)} ?time .`;
   }
-  INSERT {
-      GRAPH ?g {
-          ${escapedUri} ext:status ${sparqlEscapeUri(status)} ;
-              ${sparqlEscapeUri(timePred)} ${sparqlEscapeDateTime(time)} .
-      }
+  queryString += `
+    }
+}`;
+  if (status) {
+    queryString += `
+INSERT {
+    GRAPH ?g {
+        ${escapedUri} ext:status ${sparqlEscapeUri(status)} ;
+            ${sparqlEscapeUri(timePred)} ${sparqlEscapeDateTime(time)} .
+    }
+}`;
   }
-  WHERE {
-      GRAPH ?g {
-          ${escapedUri} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
-          OPTIONAL { ${escapedUri} ext:status ?status }
-          OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
-      }
-  }`;
+  queryString += `
+WHERE {
+    GRAPH ?g {
+        ${escapedUri} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
+        OPTIONAL { ${escapedUri} ext:status ?status }
+        OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
+    }
+}`;
   await updateSudo(queryString);
 }
 
@@ -125,8 +164,13 @@ async function findJobTodo (job) {
   }
 }
 
-async function findJobUsingCollection (collection) {
-  const queryString = `
+async function findJobUsingCollection (collection, requireGenerated = false) {
+  /*
+   * With requireGenerated, only jobs that are busy or already produced an archive qualify
+   * (used by the generic /files/archive endpoint to decide if the cached result can be served).
+   * Without it, any job using the collection qualifies, even one that didn't start yet.
+   */
+  let queryString = `
   PREFIX cogs: <http://vocab.deri.ie/cogs#>
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -138,15 +182,23 @@ async function findJobUsingCollection (collection) {
       ${sparqlEscapeUri(collection)} a prov:Collection .
       ?job a ${sparqlEscapeUri(RDF_JOB_TYPE)} ;
           mu:uuid ?uuid ;
-          ext:status ?status ;
-          prov:generated ?generated ;
-          prov:used ${sparqlEscapeUri(collection)} .
+          prov:used ${sparqlEscapeUri(collection)} .`;
+  if (requireGenerated) {
+    queryString += `
+      ?job ext:status ?status ;
+          prov:generated ?generated .
       VALUES ?status {
         ${sparqlEscapeUri(SUCCESS)}
         ${sparqlEscapeUri(RUNNING)}
       }
       ?generated a nfo:FileDataObject ;
-          mu:uuid ?generatedId .
+          mu:uuid ?generatedId .`;
+  } else {
+    queryString += `
+      OPTIONAL { ?job ext:status ?status }
+      OPTIONAL { ?job prov:generated ?generated }`;
+  }
+  queryString += `
       OPTIONAL { ?job dct:created ?created }
       OPTIONAL { ?job prov:startedAtTime ?started }
       OPTIONAL { ?job prov:endedAtTime ?ended }
@@ -201,6 +253,7 @@ async function findUnfinishedJobs () {
 export {
   createJob,
   attachCollectionToJob,
+  insertAndAttachCollectionToJob,
   attachResultToJob,
   updateJobStatus,
   RUNNING, SUCCESS, FAIL,

@@ -94,3 +94,8 @@ typings/
 
 # End of https://www.gitignore.io/api/node
 test.zip
+/.idea/.gitignore
+/.idea/file-bundling-service.iml
+/.idea/misc.xml
+/.idea/modules.xml
+/.idea/vcs.xml
