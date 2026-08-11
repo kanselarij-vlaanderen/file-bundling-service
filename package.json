@@ -1,6 +1,6 @@
 {
   "name": "file-bundling-service",
-  "version": "4.0.0",
+  "version": "4.0.1",
   "description": "Service for creating (zip) archives from mu-files, including Kaleidos specific endpoints to bundle all documents related to an agenda, agendaitem, case or subcase",
   "main": "app.js",
   "scripts": {
