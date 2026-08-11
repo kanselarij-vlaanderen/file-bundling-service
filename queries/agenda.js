@@ -108,21 +108,14 @@ const fetchFilesFromAgendaByMandatees = async (agendaId, mandateeIds, currentUse
     `
   }
   queryString += `
-      {
-        ?agenda a besluitvorming:Agenda ;
+      ?agenda a besluitvorming:Agenda ;
           mu:uuid ${sparqlEscapeString(agendaId)} ;
           dct:hasPart ?agendaitem .
-        ?agendaitem ext:heeftBevoegdeVoorAgendapunt ?mandatee .
-        ?mandatee mu:uuid ?mandateeId .
-        FILTER (?mandateeId IN (${mandateeIds
-          .map((id) => sparqlEscapeString(id))
-          .join(", ")}))
-      } UNION {
-        ?agenda a besluitvorming:Agenda ;
-          mu:uuid ${sparqlEscapeString(agendaId)} ;
-          dct:hasPart ?agendaitem .
-        FILTER NOT EXISTS { ?agendaitem ext:heeftBevoegdeVoorAgendapunt ?mandatee . }
-      }
+      ?agendaitem ext:heeftBevoegdeVoorAgendapunt ?mandatee .
+      ?mandatee mu:uuid ?mandateeId .
+      FILTER (?mandateeId IN (${mandateeIds
+        .map((id) => sparqlEscapeString(id))
+        .join(", ")}))
       ?originalDocument a dossier:Stuk ;
           dct:title ?originalDocumentName .
       {
