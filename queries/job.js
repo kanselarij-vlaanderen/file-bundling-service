@@ -1,5 +1,5 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
-import { RESOURCE_BASE, RDF_JOB_TYPE } from '../config';
+import { RESOURCE_BASE, RDF_JOB_TYPE } from '../env';
 import { createCollection } from '../lib/collection';
 import { parseSparqlResults, sparqlQueryWithRetry } from './util';
 

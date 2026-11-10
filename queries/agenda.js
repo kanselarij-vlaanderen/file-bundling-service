@@ -1,6 +1,6 @@
 import { sparqlEscapeString, sparqlEscapeUri, query } from 'mu';
 import { parseSparqlResults } from './util';
-import { DECISION_RESULT_CODES_LIST } from '../config';
+import { DECISION_RESULT_CODES_LIST } from '../env';
 
 const fetchFilesFromAgenda = async (agendaId, currentUser, extensions, areDecisionsReleased, newDocumentsOnly) => {
   let queryString = `

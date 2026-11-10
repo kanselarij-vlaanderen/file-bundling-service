@@ -1,6 +1,6 @@
 import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateTime, query, update, uuid as generateUuid } from 'mu';
 import { parseSparqlResults } from './util';
-import { RESOURCE_BASE } from '../config';
+import { RESOURCE_BASE } from '../env';
 
 // const getFilesById = async function (fileIds) {
 //   const BATCH_SIZE = 5;

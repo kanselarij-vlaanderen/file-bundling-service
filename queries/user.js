@@ -6,7 +6,7 @@ import {
   ACCESS_LEVEL_CONFIDENTIAL,
   ACCESS_LEVEL_RETRACTED,
   DEBUG_LOG_ACCESS_ROLES,
-} from '../config';
+} from '../env';
 
 
 async function fetchCurrentUser (sessionUri) {

@@ -1,7 +1,7 @@
 import bodyParser from 'body-parser';
 import { app, errorHandler } from 'mu';
 
-import { ALLOWED_DELTA_SIZE, ROLES, EXTENSION_PDF, JSONAPI_JOB_TYPE } from './config';
+import { ALLOWED_DELTA_SIZE, ROLES, EXTENSION_PDF, JSONAPI_JOB_TYPE } from './env';
 import { getFilesById, getFile } from './queries/file';
 import { runBundlingJob as bundlingJobRunner } from './lib/bundling-job';
 import { runJob as jobRunner } from './lib/job';
