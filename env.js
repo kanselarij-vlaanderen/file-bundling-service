@@ -36,7 +36,7 @@ function isTruthy(value) {
 
 const DEBUG_LOG_ACCESS_ROLES = isTruthy(process.env.DEBUG_LOG_ACCESS_ROLES);
 
-module.exports = {
+export {
   ALLOWED_DELTA_SIZE,
   RESOURCE_BASE,
   STORAGE_PATH,

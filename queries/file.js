@@ -141,8 +141,8 @@ LIMIT 1
   }
 };
 
-module.exports = {
+export {
   getFilesById,
   createFile,
   getFile
-};
+}
