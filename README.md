@@ -21,6 +21,7 @@ file-bundling:
   image: kanselarij/file-bundling-service
   environment:
     MU_APPLICATION_FILE_STORAGE_PATH: "path-to-file/"
+    ALLOW_MU_AUTH_SUDO: "true"
   volumes:
     - ./data/files:/share
 ```

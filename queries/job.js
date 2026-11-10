@@ -1,5 +1,4 @@
 import { query, update, uuid as generateUuid, sparqlEscapeString, sparqlEscapeUri, sparqlEscapeDateTime } from 'mu';
-import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
 import { RESOURCE_BASE, RDF_JOB_TYPE } from '../config';
 import { createCollection } from '../lib/collection';
 import { parseSparqlResults, sparqlQueryWithRetry } from './util';
@@ -72,7 +71,7 @@ async function insertAndAttachCollectionToJob (job, collectionMembers) {
           ${sparqlEscapeUri(job.uri)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
       }
   }`;
-  await updateSudo(queryString);
+  await update(queryString, { sudo: true });
   return job;
 }
 
@@ -91,7 +90,7 @@ async function attachResultToJob (job, result) {
           ${sparqlEscapeUri(job)} a ${sparqlEscapeUri(RDF_JOB_TYPE)} .
       }
   }`;
-  await updateSudo(queryString);
+  await update(queryString, { sudo: true });
   return job;
 }
 
@@ -136,7 +135,7 @@ WHERE {
         OPTIONAL { ${escapedUri} ${sparqlEscapeUri(timePred)} ?time }
     }
 }`;
-  await updateSudo(queryString);
+  await update(queryString, { sudo: true });
 }
 
 async function findJobTodo (job) {
@@ -154,7 +153,7 @@ async function findJobTodo (job) {
           FILTER (?status NOT IN (${[RUNNING, SUCCESS, FAIL].map(sparqlEscapeUri).join(', ')}))
       }
   }`;
-  const results = await querySudo(queryString);
+  const results = await query(queryString, { sudo: true });
   const parsedResults = parseSparqlResults(results);
   if (parsedResults.length > 0) {
     parsedResults[0].uri = job;
@@ -228,7 +227,7 @@ async function findAllJobArchives () {
           nie:dataSource ?file .
     }
   }`;
-  const results = await sparqlQueryWithRetry(querySudo, queryString);
+  const results = await sparqlQueryWithRetry((q) => query(q, { sudo: true }), queryString);
   return parseSparqlResults(results);
 }
 
@@ -246,7 +245,7 @@ async function findUnfinishedJobs () {
           FILTER NOT EXISTS { ?job ext:status ?status . }
       }
   }`;
-  const results = await querySudo(queryString);
+  const results = await query(queryString, { sudo: true });
   return parseSparqlResults(results);
 }
 

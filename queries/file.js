@@ -1,5 +1,4 @@
-import { updateSudo } from '@lblod/mu-auth-sudo';
-import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateTime, query, uuid as generateUuid } from 'mu';
+import { sparqlEscapeString, sparqlEscapeUri, sparqlEscapeInt, sparqlEscapeDateTime, query, update, uuid as generateUuid } from 'mu';
 import { parseSparqlResults } from './util';
 import { RESOURCE_BASE } from '../config';
 
@@ -105,7 +104,7 @@ const createFile = async function (file, physicalUri, graph) {
                 dct:modified ${sparqlEscapeDateTime(file.created)} .
       }
   }`;
-  await updateSudo(q);
+  await update(q, { sudo: true });
   file.uri = uri;
   return file;
 };

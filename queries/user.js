@@ -1,5 +1,4 @@
-import { sparqlEscapeUri } from 'mu';
-import { querySudo as query } from '@lblod/mu-auth-sudo';
+import { query, sparqlEscapeUri } from 'mu';
 import { parseSparqlResults } from './util';
 import { getMandateesForDocument } from './document';
 import {
@@ -37,7 +36,7 @@ PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
       }
     }
   }`;
-  const currentAccount = await query(accountQuery);
+  const currentAccount = await query(accountQuery, { sudo: true });
   if (currentAccount) {
     let parsedResults = parseSparqlResults(currentAccount);
     // Change the result array into something more useable. We'll get a full object with user, membership, role, organization, and mandatee for each membership & mandatee of the user (see ./util/parseSparqlResults)

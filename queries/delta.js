@@ -1,5 +1,4 @@
-import { sparqlEscapeUri } from 'mu';
-import { querySudo, updateSudo } from '@lblod/mu-auth-sudo';
+import { query, update, sparqlEscapeUri } from 'mu';
 import { parseSparqlResults } from './util';
 
 const WHERE_TEMPLATE = `
@@ -28,7 +27,7 @@ SELECT DISTINCT ?job ?collection ?file ?physf
 ORDER BY ?job ?collection
   `;
 
-  const result = await querySudo(queryString);
+  const result = await query(queryString, { sudo: true });
   return parseSparqlResults(result);
 }
 
@@ -52,7 +51,7 @@ async function findJobsWithoutCollectionMembers () {
       }
   }`
 
-  const result = await querySudo(queryString);
+  const result = await query(queryString, { sudo: true });
   return parseSparqlResults(result);
 }
 
@@ -60,7 +59,7 @@ async function removeJobAndCollection (jobObject) {
   const job = jobObject.job;
   if (job) {
     await removePhysicalFilesOfJob(job);
-    await removeVirtualFilesOfJob(job); 
+    await removeVirtualFilesOfJob(job);
     await removeCollectionsOfJob(job);
     await removeJob(job);
   }
@@ -73,7 +72,7 @@ async function removePhysicalFilesOfJob (jobUri) {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  
+
   DELETE {
       GRAPH ?g {
         ?physf ?physfP ?physfO .
@@ -87,8 +86,8 @@ async function removePhysicalFilesOfJob (jobUri) {
           nie:dataSource ?file ;
           ?physfP ?physfO .
     }
-  }` 
-  await updateSudo(queryString);
+  }`
+  await update(queryString, { sudo: true });
 }
 
 async function removeVirtualFilesOfJob (jobUri) {
@@ -97,7 +96,7 @@ async function removeVirtualFilesOfJob (jobUri) {
   PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
   PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  
+
   DELETE {
       GRAPH ?g {
           ?file ?virtfP ?virtfO .
@@ -110,15 +109,15 @@ async function removeVirtualFilesOfJob (jobUri) {
       ?file a nfo:FileDataObject ;
           ?virtfP ?virtfO .
     }
-  }` 
-  await updateSudo(queryString);
+  }`
+  await update(queryString, { sudo: true });
 }
 
 async function removeCollectionsOfJob (jobUri) {
   const queryString = `
   PREFIX prov: <http://www.w3.org/ns/prov#>
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  
+
   DELETE {
       GRAPH ?g {
           ?collection ?collectionP ?collectionO .
@@ -132,13 +131,13 @@ async function removeCollectionsOfJob (jobUri) {
             ?collectionP ?collectionO .
     }
   }`
-  await updateSudo(queryString);
+  await update(queryString, { sudo: true });
 }
 
 async function removeJob (jobUri) {
   const queryString = `
   PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
-  
+
   DELETE {
       GRAPH ?g {
         ${sparqlEscapeUri(jobUri)} ?jobP ?jobO .
@@ -150,7 +149,7 @@ async function removeJob (jobUri) {
               ?jobP ?jobO .
       }
   }`
-  await updateSudo(queryString);
+  await update(queryString, { sudo: true });
 }
 
 export {

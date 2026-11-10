@@ -1,5 +1,4 @@
 import { query, update, sparqlEscapeString, sparqlEscapeUri } from 'mu';
-import { querySudo } from '@lblod/mu-auth-sudo';
 import { parseSparqlResults } from './util';
 import { createCollection as createCollectionObject, computeMembersHash } from '../lib/collection';
 
@@ -44,7 +43,7 @@ WHERE {
     }
 }
   `;
-  const results = await querySudo(q);
+  const results = await query(q, { sudo: true });
   const parsedResults = parseSparqlResults(results);
 
   return parsedResults;

@@ -1,5 +1,4 @@
-import { updateSudo } from '@lblod/mu-auth-sudo';
-import { sparqlEscapeString, sparqlEscapeUri , query } from 'mu';
+import { sparqlEscapeString, sparqlEscapeUri, query, update } from 'mu';
 import { parseSparqlResults } from './util';
 
 async function renameFileFromDocument (doc, file, newFileName) {
@@ -35,7 +34,7 @@ async function renameFileFromDocument (doc, file, newFileName) {
           FILTER (?fileName != ${sparqlEscapeString(newFileName)})
       }
   }`;
-  await updateSudo(q);
+  await update(q, { sudo: true });
 }
 
 async function renameFlattenedPieceFromDocument(doc, file, newPieceName) {
@@ -67,7 +66,7 @@ async function renameFlattenedPieceFromDocument(doc, file, newPieceName) {
           FILTER (?pieceName != ${sparqlEscapeString(newPieceName)})
       }
   }`;
-  await updateSudo(q);
+  await update(q, { sudo: true });
 }
 
 
